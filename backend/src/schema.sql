@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS produtos (
     preco NUMERIC(10,2) NOT NULL,
     quantidade INTEGER DEFAULT 1,
     status VARCHAR(30) DEFAULT 'disponivel',
+    condicao VARCHAR(150),
+    imagem TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
