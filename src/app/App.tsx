@@ -50,7 +50,6 @@ interface AdminUser { id: number; name: string; email: string; phone: string; re
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ADMIN_EMAIL = "vitrinevirtual2k26@gmail.com";
-const ADMIN_PASSWORD = "12345678";
 const CATEGORIES: Category[] = ["Feminino","Masculino","Infantil","Calçados","Livros","Brinquedos","Acessórios"];
 const STATES = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
