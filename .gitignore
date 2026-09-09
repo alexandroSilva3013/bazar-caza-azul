@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+backend/node_modules/
+
+# Variáveis de ambiente e senhas
+.env
+.env.*
+backend/.env
+backend/.env.*
+
+# Build do frontend
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
