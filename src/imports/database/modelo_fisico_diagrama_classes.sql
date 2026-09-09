@@ -126,7 +126,7 @@ CREATE TABLE whatsapp (
 
 -- Configuração padrão
 INSERT INTO whatsapp (numero, mensagem_padrao) VALUES
-    ('5511987654321',
+    ('5500000000000',
      'Olá, Casa Azul! Gostaria de confirmar minha compra/reserva. Cliente: {nome} Telefone: {telefone} Produtos: {lista} Valor total: {total} Aguardo confirmação.');
 
 -- ── 9. COMPRA ─────────────────────────────────────────────────
@@ -244,7 +244,7 @@ INSERT INTO pessoa (nome, email, senha_hash, telefone, tipo_perfil, id_endereco)
     ('João Santos',     'joao@email.com',      '$2b$12$HASH_JOAO',     '(11) 91234-5678', 'cliente',        2),
     ('Ana Paula Costa', 'ana.paula@email.com', '$2b$12$HASH_ANA',      '(11) 99876-5432', 'vendedor',       3),
     ('Carlos Oliveira', 'carlos@email.com',    '$2b$12$HASH_CARLOS',   '(11) 97654-3210', 'cliente',        4),
-    ('Admin Casa Azul', 'vitrinevirtual2k26@gmail.com','$2b$12$HASH_ADMIN','(11) 00000-0000','administrador',5);
+    ('Admin Casa Azul', 'admin@exemplo.com','$2b$12$HASH_ADMIN','(11) 00000-0000','administrador',5);
 
 -- Especializações
 INSERT INTO cliente     (id_cliente)  VALUES (1), (2), (4);

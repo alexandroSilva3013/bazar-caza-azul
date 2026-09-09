@@ -6,22 +6,24 @@ Não recrie o projeto do zero e não altere o design, identidade visual, estrutu
 Atualize o protótipo EXISTENTE, adicionando somente as funcionalidades que estão faltando abaixo.
 
 Mantenha:
-- Identidade visual da Casa Azul;
-- Cores atuais;
-- Logo;
-- Layout atual;
-- Catálogo;
-- Cadastro do usuário;
-- Login do usuário;
-- Navegação existente;
-- Produtos;
-- Reservas;
-- WhatsApp;
-- Todos os componentes já criados.
+
+* Identidade visual da Casa Azul;
+* Cores atuais;
+* Logo;
+* Layout atual;
+* Catálogo;
+* Cadastro do usuário;
+* Login do usuário;
+* Navegação existente;
+* Produtos;
+* Reservas;
+* WhatsApp;
+* Todos os componentes já criados.
 
 As novas funcionalidades devem ser integradas visualmente ao protótipo existente.
 
 ==================================================
+
 1. ÁREA DO USUÁRIO – CARRINHO / RESERVAS
 ==================================================
 
@@ -31,15 +33,15 @@ Quando o usuário selecionar um produto, permitir que ele seja adicionado ao car
 
 Criar uma tela ou painel de "Carrinho" contendo:
 
-- Foto do produto;
-- Nome do produto;
-- Categoria;
-- Valor individual;
-- Quantidade;
-- Subtotal;
-- Botão para remover o produto;
-- Botão para continuar navegando no catálogo;
-- Valor total de todos os produtos selecionados.
+* Foto do produto;
+* Nome do produto;
+* Categoria;
+* Valor individual;
+* Quantidade;
+* Subtotal;
+* Botão para remover o produto;
+* Botão para continuar navegando no catálogo;
+* Valor total de todos os produtos selecionados.
 
 IMPORTANTE:
 
@@ -61,7 +63,7 @@ Criar interação visual para adicionar e remover produtos.
 
 ==================================================
 2. FINALIZAÇÃO DA COMPRA
-==================================================
+===
 
 O sistema deverá permitir que o usuário finalize a compra dos produtos adicionados ao carrinho.
 
@@ -71,13 +73,13 @@ Adicionar botão:
 
 Antes da finalização, apresentar uma tela de resumo contendo:
 
-- Dados básicos do usuário logado;
-- Produtos selecionados;
-- Quantidade;
-- Valor individual;
-- Valor total;
-- Opção de remover produtos;
-- Botão "Confirmar compra".
+* Dados básicos do usuário logado;
+* Produtos selecionados;
+* Quantidade;
+* Valor individual;
+* Valor total;
+* Opção de remover produtos;
+* Botão "Confirmar compra".
 
 IMPORTANTE:
 
@@ -89,7 +91,7 @@ Após clicar em "Confirmar compra", mostrar uma tela de confirmação informando
 
 ==================================================
 3. WHATSAPP
-==================================================
+===
 
 Após a confirmação da compra, criar um botão:
 
@@ -99,26 +101,27 @@ Ao clicar, simular o redirecionamento para o WhatsApp da Casa Azul.
 
 A mensagem deverá conter:
 
-- Nome do usuário;
-- Telefone;
-- Lista de todos os produtos selecionados;
-- Quantidade de cada produto;
-- Valor individual;
-- Valor total;
-- Data da solicitação.
+* Nome do usuário;
+* Telefone;
+* Lista de todos os produtos selecionados;
+* Quantidade de cada produto;
+* Valor individual;
+* Valor total;
+* Data da solicitação.
 
 Exemplo visual da mensagem:
 
 "Olá, Casa Azul!
 Gostaria de confirmar minha compra/reserva.
 
-Cliente: [Nome]
-Telefone: [Telefone]
+Cliente: \[Nome]
+Telefone: \[Telefone]
 
 Produtos:
-- Camiseta azul – R$ 20,00
-- Calça jeans – R$ 30,00
-- Livro – R$ 15,00
+
+* Camiseta azul – R$ 20,00
+* Calça jeans – R$ 30,00
+* Livro – R$ 15,00
 
 Valor total: R$ 65,00
 
@@ -128,7 +131,7 @@ O pagamento NÃO deverá ser realizado pelo site.
 
 ==================================================
 4. HISTÓRICO DE COMPRAS
-==================================================
+===
 
 Adicionar ao menu do usuário a opção:
 
@@ -138,26 +141,26 @@ Criar uma tela contendo compras anteriores.
 
 Cada registro deve apresentar:
 
-- Número da compra;
-- Data;
-- Produtos;
-- Quantidade;
-- Valor total;
-- Status.
+* Número da compra;
+* Data;
+* Produtos;
+* Quantidade;
+* Valor total;
+* Status.
 
 Exemplos de status:
 
-- Pendente;
-- Reservada;
-- Confirmada;
-- Finalizada;
-- Cancelada.
+* Pendente;
+* Reservada;
+* Confirmada;
+* Finalizada;
+* Cancelada.
 
 O usuário deverá conseguir visualizar os detalhes de cada compra.
 
 ==================================================
 5. ÁREA ADMINISTRATIVA
-==================================================
+===
 
 CRIAR UMA ÁREA ADMINISTRATIVA COMPLETA E SEPARADA DA ÁREA DO USUÁRIO.
 
@@ -165,18 +168,18 @@ As funcionalidades administrativas NÃO podem aparecer para usuários comuns.
 
 O usuário comum NÃO deve conseguir acessar:
 
-- Dashboard administrativo;
-- Cadastro de produtos;
-- Edição de produtos;
-- Exclusão de produtos;
-- Cadastro de categorias;
-- Relatórios;
-- Controle administrativo;
-- Informações internas de vendas.
+* Dashboard administrativo;
+* Cadastro de produtos;
+* Edição de produtos;
+* Exclusão de produtos;
+* Cadastro de categorias;
+* Relatórios;
+* Controle administrativo;
+* Informações internas de vendas.
 
 ==================================================
 6. LOGIN ADMINISTRATIVO
-==================================================
+===
 
 Criar uma tela exclusiva:
 
@@ -191,7 +194,7 @@ O acesso deverá exigir credenciais específicas.
 Credenciais de demonstração do protótipo:
 
 E-mail:
-vitrinevirtual2k26@gmail.com
+admin@exemplo.com
 
 Senha:
 1 a 8
@@ -214,34 +217,34 @@ Não permitir acesso às telas administrativas sem autenticação.
 
 ==================================================
 7. DASHBOARD ADMINISTRATIVO
-==================================================
+===
 
 Após o login administrativo, criar um Dashboard exclusivo.
 
 Menu lateral:
 
-- Dashboard;
-- Produtos;
-- Categorias;
-- Reservas/Vendas;
-- Usuários;
-- Relatórios;
-- Sair.
+* Dashboard;
+* Produtos;
+* Categorias;
+* Reservas/Vendas;
+* Usuários;
+* Relatórios;
+* Sair.
 
 Adicionar cards informativos:
 
-- Total de produtos;
-- Produtos disponíveis;
-- Produtos reservados;
-- Produtos vendidos;
-- Total de vendas;
-- Usuários cadastrados.
+* Total de produtos;
+* Produtos disponíveis;
+* Produtos reservados;
+* Produtos vendidos;
+* Total de vendas;
+* Usuários cadastrados.
 
 O dashboard deve possuir aparência profissional e seguir a identidade visual da Casa Azul.
 
 ==================================================
 8. GERENCIAMENTO DE PRODUTOS
-==================================================
+===
 
 Na área administrativa, criar:
 
@@ -249,10 +252,10 @@ Na área administrativa, criar:
 
 O administrador deverá conseguir:
 
-- Cadastrar produto;
-- Atualizar produto;
-- Remover produto;
-- Alterar disponibilidade.
+* Cadastrar produto;
+* Atualizar produto;
+* Remover produto;
+* Alterar disponibilidade.
 
 Criar botão:
 
@@ -260,20 +263,20 @@ Criar botão:
 
 Campos:
 
-- Nome do produto;
-- Categoria;
-- Descrição;
-- Valor;
-- Estado de conservação;
-- Imagem;
-- Status/disponibilidade.
+* Nome do produto;
+* Categoria;
+* Descrição;
+* Valor;
+* Estado de conservação;
+* Imagem;
+* Status/disponibilidade.
 
 Status:
 
-- Disponível;
-- Reservado;
-- Vendido;
-- Indisponível.
+* Disponível;
+* Reservado;
+* Vendido;
+* Indisponível.
 
 Criar fluxo de protótipo:
 
@@ -299,7 +302,7 @@ Excluir
 
 ==================================================
 9. GERENCIAMENTO DE CATEGORIAS
-==================================================
+===
 
 Criar área:
 
@@ -307,21 +310,21 @@ Criar área:
 
 O administrador poderá:
 
-- Adicionar categoria;
-- Editar categoria;
-- Excluir categoria.
+* Adicionar categoria;
+* Editar categoria;
+* Excluir categoria.
 
 Exemplos:
 
-- Roupas;
-- Calçados;
-- Livros;
-- Brinquedos;
-- Acessórios.
+* Roupas;
+* Calçados;
+* Livros;
+* Brinquedos;
+* Acessórios.
 
 ==================================================
 10. CONTROLE DE DISPONIBILIDADE
-==================================================
+===
 
 O administrador deverá conseguir alterar a disponibilidade dos produtos.
 
@@ -341,7 +344,7 @@ Atualizar visualmente o catálogo de acordo com o status.
 
 ==================================================
 11. GERENCIAMENTO DE RESERVAS / VENDAS
-==================================================
+===
 
 Criar área administrativa:
 
@@ -349,30 +352,30 @@ Criar área administrativa:
 
 Mostrar:
 
-- Cliente;
-- Telefone;
-- Produto;
-- Quantidade;
-- Valor;
-- Valor total;
-- Data;
-- Status.
+* Cliente;
+* Telefone;
+* Produto;
+* Quantidade;
+* Valor;
+* Valor total;
+* Data;
+* Status.
 
 Permitir ao administrador atualizar o status.
 
 Status:
 
-- Pendente;
-- Reservado;
-- Confirmado;
-- Finalizado;
-- Cancelado.
+* Pendente;
+* Reservado;
+* Confirmado;
+* Finalizado;
+* Cancelado.
 
 Criar visualização detalhada de cada reserva/compra.
 
 ==================================================
 12. RELATÓRIO DE VENDAS
-==================================================
+===
 
 Adicionar no menu administrativo:
 
@@ -382,18 +385,18 @@ Criar uma tela visual com informações sobre as vendas realizadas.
 
 Mostrar:
 
-- Total de vendas;
-- Quantidade de produtos vendidos;
-- Valor total das vendas;
-- Produtos vendidos;
-- Data das vendas;
-- Status.
+* Total de vendas;
+* Quantidade de produtos vendidos;
+* Valor total das vendas;
+* Produtos vendidos;
+* Data das vendas;
+* Status.
 
 Adicionar tabela e gráficos simples.
 
 ==================================================
 13. RELATÓRIO GERAL
-==================================================
+===
 
 Criar:
 
@@ -401,10 +404,10 @@ Criar:
 
 O administrador deverá visualizar informações gerais sobre:
 
-- Produtos;
-- Usuários;
-- Reservas;
-- Vendas.
+* Produtos;
+* Usuários;
+* Reservas;
+* Vendas.
 
 Adicionar cards, tabelas e gráficos simples.
 
@@ -419,38 +422,40 @@ Total de vendas
 
 ==================================================
 14. RESTRIÇÃO DE ACESSO
-==================================================
+===
 
 MUITO IMPORTANTE:
 
 Separar completamente os dois tipos de acesso:
 
 USUÁRIO COMUM:
-- Cadastro;
-- Login;
-- Catálogo;
-- Pesquisa;
-- Filtros;
-- Carrinho;
-- Reserva/compra;
-- Histórico;
-- WhatsApp.
+
+* Cadastro;
+* Login;
+* Catálogo;
+* Pesquisa;
+* Filtros;
+* Carrinho;
+* Reserva/compra;
+* Histórico;
+* WhatsApp.
 
 ADMINISTRADOR:
-- Login administrativo;
-- Dashboard;
-- Produtos;
-- Categorias;
-- Reservas/vendas;
-- Usuários;
-- Relatórios;
-- Controle de disponibilidade.
+
+* Login administrativo;
+* Dashboard;
+* Produtos;
+* Categorias;
+* Reservas/vendas;
+* Usuários;
+* Relatórios;
+* Controle de disponibilidade.
 
 As informações e funcionalidades administrativas não devem aparecer no menu do usuário comum.
 
 ==================================================
 15. PROTOTIPAÇÃO E NAVEGAÇÃO
-==================================================
+===
 
 Criar todas as conexões necessárias para que o protótipo possa ser demonstrado.
 
@@ -513,3 +518,4 @@ Não alterar desnecessariamente o design existente.
 Apenas complementar o protótipo com as funcionalidades descritas acima.
 
 O objetivo é que, ao apresentar o protótipo, seja possível demonstrar visualmente tanto o fluxo completo do usuário quanto o fluxo completo do administrador.
+

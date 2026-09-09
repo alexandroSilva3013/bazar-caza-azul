@@ -100,8 +100,8 @@ COMMENT ON TABLE admins IS 'Usuários administrativos (acesso ao painel)';
 
 -- Seed do admin demo
 INSERT INTO admins (name, email, password_hash) VALUES
-    ('Admin Casa Azul', 'vitrinevirtual2k26@gmail.com',
-     '$2b$12$HASH_DO_BCRYPT_DA_SENHA_12345678');   -- substituir pelo hash real
+    ('Admin Casa Azul', 'admin@exemplo.com',
+     '$2b$12$HASH_BCRYPT_DE_EXEMPLO');   -- substituir pelo hash real
 
 -- ── 5. PEDIDOS (CARRINHO FINALIZADO) ────────────────────────
 

@@ -50,7 +50,6 @@ interface AdminUser { id: number; name: string; email: string; phone: string; re
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ADMIN_EMAIL = "vitrinevirtual2k26@gmail.com";
 const CATEGORIES: Category[] = ["Feminino","Masculino","Infantil","Calçados","Livros","Brinquedos","Acessórios"];
 const STATES = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -661,10 +660,7 @@ function ProductCard({ product }: { product: Product }) {
               </div>
               <button type="submit" className="w-full py-3.5 bg-[#163E8F] text-white rounded-xl hover:bg-[#163E8F]/90 font-semibold shadow-lg">Acessar Painel</button>
             </form>
-            <div className="mt-4 p-3 bg-accent rounded-xl text-xs text-center text-muted-foreground space-y-1">
-              <p><strong className="text-primary">Demo:</strong> vitrinevirtual2k26@gmail.com</p>
-              <p>Senha: <strong className="text-primary">12345678</strong></p>
-            </div>
+  
             <div className="mt-5 pt-5 border-t border-border text-center">
               <button onClick={() => setCurrentScreen("login")} className="text-muted-foreground text-sm hover:text-primary flex items-center gap-1 mx-auto"><ChevronRight className="w-4 h-4 rotate-180" /> Voltar ao Login de Usuário</button>
             </div>
