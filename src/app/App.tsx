@@ -30,7 +30,7 @@ type Screen =
 
 type ProductStatus = "disponivel" | "reservado" | "vendido" | "indisponivel";
 type Category = "Feminino" | "Masculino" | "Infantil" | "Calçados" | "Livros" | "Brinquedos" | "Acessórios";
-type AdminTabType = "dashboard" | "users" | "products" | "categories" | "reservations" | "reports";
+type AdminTabType = "dashboard" | "users" | "products" | "categories" | "reservations" | "reports" | "whatsapp";
 type ReservationStatus = "Aguardando Confirmação" | "Confirmada" | "Finalizada" | "Cancelada";
 type OrderStatus = "Pendente" | "Reservada" | "Confirmada" | "Finalizada" | "Cancelada";
 
@@ -164,7 +164,7 @@ export default function App() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
 useEffect(() => {
-  fetch("fetch(`${API_URL}/api/produtos`)")
+  fetch(`${API_URL}/api/produtos`)
     .then(res => res.json())
     .then(dados => {
       const produtosConvertidos = dados.map((p: any) => ({
@@ -181,6 +181,18 @@ useEffect(() => {
     });
 }, []);
 
+useEffect(() => {
+  fetch(`${API_URL}/api/configuracoes`)
+    .then(res => res.json())
+    .then(dados => {
+      setWhatsapp(dados.whatsapp || "");
+    })
+    .catch(error => {
+      console.error("Erro ao carregar WhatsApp:", error);
+    });
+}, []);
+
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -195,6 +207,7 @@ useEffect(() => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [adminTab, setAdminTab] = useState<AdminTabType>("dashboard");
+  const [whatsapp, setWhatsapp] = useState("");
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(initAdminUsers);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -1113,7 +1126,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div className="border-t border-border pt-3 flex items-center justify-between"><span className="font-medium">Total</span><span className="font-bold text-primary text-lg">R$ {latest.total.toFixed(2)}</span></div>
               </div>
             )}
-            <a href={`https://wa.me/5511987654321?text=${msg}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg mb-4">
+            <a href={`https://wa.me/${whatsapp}?text=${msg}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg mb-4">
               <MessageCircle className="w-5 h-5" /> Enviar Pedido pelo WhatsApp
             </a>
             <div className="flex gap-3">
@@ -1177,7 +1190,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div><p className="font-semibold">{selectedProduct.nome}</p><p className="text-primary font-bold text-lg">R$ {selectedProduct.preco.toFixed(2)}</p></div>
               </div>
             )}
-            <a href={`https://wa.me/5511987654321?text=${msg}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg mb-4"><MessageCircle className="w-5 h-5" /> Continuar para WhatsApp</a>
+            <a href={`https://wa.me/${whatsapp}?text=${msg}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg mb-4"><MessageCircle className="w-5 h-5" /> Continuar para WhatsApp</a>
             <div className="flex gap-3">
               <button onClick={() => setCurrentScreen("my-reservations")} className="flex-1 py-3 bg-accent text-primary rounded-xl hover:bg-accent/80 font-medium text-sm">Minhas Reservas</button>
               <button onClick={() => { setCurrentScreen("home"); setSelectedProduct(null); }} className="flex-1 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 font-medium text-sm">Voltar ao Início</button>
@@ -1445,7 +1458,49 @@ function ProductCard({ product }: { product: Product }) {
     const [showModal, setShowModal] = useState(false);
     const [deleteId, setDeleteId] = useState<number|null>(null);
     const [editingProduct, setEditingProduct] = useState<Product|null>(null);
- const [pForm, setPForm] = useState({
+    const [whatsappInput, setWhatsappInput] = useState(whatsapp);
+
+const salvarWhatsApp = async () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    toast.error("Sessão administrativa não encontrada.");
+    return;
+  }
+
+  if (!whatsappInput.trim()) {
+    toast.error("Informe o número do WhatsApp.");
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/api/configuracoes`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        whatsapp: whatsappInput.trim()
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      toast.error(dados.erro || "Erro ao salvar WhatsApp.");
+      return;
+    }
+
+    setWhatsapp(whatsappInput.trim());
+    toast.success("WhatsApp atualizado com sucesso!");
+  } catch (error) {
+    console.error(error);
+    toast.error("Não foi possível salvar o WhatsApp.");
+  }
+};
+
+    const [pForm, setPForm] = useState({
   nome:"",
   categoria:"Feminino" as Category,
   descricao:"",
@@ -1660,6 +1715,7 @@ const deleteProd = async (id: number) => {
       {id:"categories",label:"Categorias",I:Filter},
       {id:"reservations",label:"Reservas / Vendas",I:ShoppingBag},
       {id:"reports",label:"Relatórios",I:TrendingUp},
+      {id:"whatsapp",label:"WhatsApp",I:Phone},
     ];
 
     return (
@@ -1840,7 +1896,51 @@ const deleteProd = async (id: number) => {
             </div>
           )}
 
-          {/* REPORTS */}
+       {/* WHATSAPP */} 
+{adminTab==="whatsapp" && (
+  <div>
+    <h1
+      className="text-3xl font-bold mb-2"
+      style={{fontFamily:"Poppins,sans-serif"}}
+    >
+      WhatsApp de Atendimento
+    </h1>
+
+    <p className="text-muted-foreground mb-8">
+      Configure o número que receberá os pedidos enviados pelo site.
+    </p>
+
+    <div className="max-w-2xl">
+      <div className="bg-white rounded-2xl border p-6 shadow-sm">
+        <label className="block text-sm font-medium mb-2">
+          Número do WhatsApp
+        </label>
+
+       <input
+  type="text"
+  value={whatsappInput}
+  onChange={(e) => setWhatsappInput(e.target.value)}
+  placeholder="5561999999999"
+  className="w-full border rounded-xl px-4 py-3"
+/>
+
+        <p className="text-sm text-muted-foreground mt-2">
+          Informe o número com código do país e DDD, sem espaços,
+          parênteses ou traços.
+        </p>
+
+        <button
+  onClick={salvarWhatsApp}
+  className="mt-5 px-5 py-3 bg-primary text-white rounded-xl font-medium"
+>
+  Salvar número
+</button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* REPORTS */} 
           {adminTab==="reports" && (
             <div>
               <h1 className="text-3xl font-bold mb-8" style={{fontFamily:"Poppins,sans-serif"}}>Relatórios</h1>

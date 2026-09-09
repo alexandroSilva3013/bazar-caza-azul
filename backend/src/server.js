@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const produtosRoutes = require("./produtos");
 const usuariosRoutes = require("./usuarios");
+const configuracoesRouter = require("./configuracoes");
 
 const pool = require("./db");
 
@@ -14,6 +15,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173"
 }));
 app.use(express.json());
+app.use("/api/configuracoes", configuracoesRouter);
 
 app.use("/api/produtos", produtosRoutes);
 app.use("/api/usuarios", usuariosRoutes);

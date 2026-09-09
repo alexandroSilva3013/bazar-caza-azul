@@ -43,3 +43,8 @@ CREATE TABLE IF NOT EXISTS itens_venda (
     quantidade INTEGER NOT NULL,
     preco_unitario NUMERIC(10,2) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS configuracoes (
+    id SERIAL PRIMARY KEY,
+    whatsapp VARCHAR(20)
+);
