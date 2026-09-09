@@ -15,6 +15,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { toast, Toaster } from "sonner";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -163,7 +164,7 @@ export default function App() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
 useEffect(() => {
-  fetch("http://localhost:3001/api/produtos")
+  fetch("fetch(`${API_URL}/api/produtos`)")
     .then(res => res.json())
     .then(dados => {
       const produtosConvertidos = dados.map((p: any) => ({
@@ -238,7 +239,7 @@ const filteredProducts = allProducts.filter(p => {
 
 const handleAdminLogin = async (email: string, password: string) => {
   try {
-    const resposta = await fetch("http://localhost:3001/api/usuarios/login", {
+      const resposta = await fetch(`${API_URL}/api/usuarios/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -1512,7 +1513,7 @@ function ProductCard({ product }: { product: Product }) {
   try {
     if (editingProduct) {
       const resposta = await fetch(
-        `http://localhost:3001/api/produtos/${editingProduct.id}`,
+        `${API_URL}/api/produtos/${editingProduct.id}`,
         {
           method: "PUT",
           headers: {
@@ -1548,7 +1549,7 @@ function ProductCard({ product }: { product: Product }) {
       toast.success("Produto atualizado!");
     } else {
       const resposta = await fetch(
-        "http://localhost:3001/api/produtos",
+        "${API_URL}/api/produtos",
         {
           method: "POST",
           headers: {
@@ -1602,7 +1603,7 @@ const deleteProd = async (id: number) => {
 
   try {
     const resposta = await fetch(
-      `http://localhost:3001/api/produtos/${id}`,
+      `${API_URL}/api/produtos/${id}`,
       {
         method: "DELETE",
         headers: {
