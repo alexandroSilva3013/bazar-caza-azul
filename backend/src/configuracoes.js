@@ -26,9 +26,17 @@ router.put("/", autenticarToken, somenteAdmin, async (req, res) => {
   try {
     const { whatsapp } = req.body;
 
-    if (!whatsapp) {
+   const numeroWhatsApp = String(whatsapp || "").replace(/\D/g, "");
+
+    if (!numeroWhatsApp) {
       return res.status(400).json({
         erro: "Informe o número do WhatsApp."
+      });
+    }
+
+    if (numeroWhatsApp.length < 10 || numeroWhatsApp.length > 15) {
+      return res.status(400).json({
+        erro: "Informe um número de WhatsApp válido, com código do país e DDD."
       });
     }
 
@@ -43,7 +51,7 @@ router.put("/", autenticarToken, somenteAdmin, async (req, res) => {
         `INSERT INTO configuracoes (whatsapp)
          VALUES ($1)
          RETURNING *`,
-        [whatsapp]
+        [numeroWhatsApp]
       );
     } else {
       resultado = await pool.query(
@@ -51,7 +59,7 @@ router.put("/", autenticarToken, somenteAdmin, async (req, res) => {
          SET whatsapp = $1
          WHERE id = $2
          RETURNING *`,
-        [whatsapp, existente.rows[0].id]
+        [numeroWhatsApp, existente.rows[0].id]
       );
     }
 

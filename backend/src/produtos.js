@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("./db");
 const autenticarToken = require("./auth");
-const somenteAdmin = require("./admin");
+const adminOuVendedor = require("./adminOuVendedor");
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
 });
 
 // CADASTRAR NOVO PRODUTO
-router.post("/", autenticarToken, somenteAdmin, async (req, res) => {
+router.post("/", autenticarToken, adminOuVendedor, async (req, res) => {
   try {
     const {
       nome,
@@ -65,7 +65,7 @@ router.post("/", autenticarToken, somenteAdmin, async (req, res) => {
 });
 
 // EDITAR PRODUTO
-router.put("/:id", autenticarToken, somenteAdmin, async (req, res) => {
+router.put("/:id", autenticarToken, adminOuVendedor, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -117,8 +117,7 @@ router.put("/:id", autenticarToken, somenteAdmin, async (req, res) => {
 });
 
 // EXCLUIR PRODUTO
-router.delete("/:id", autenticarToken, somenteAdmin, async (req, res) => {
-  try {
+router.delete("/:id", autenticarToken, adminOuVendedor, async (req, res) => {  try {
     const { id } = req.params;
 
     const resultado = await pool.query(

@@ -46,7 +46,15 @@ interface UserType {
   phone: string; address: string; city: string; state: string; cep: string;
 }
 interface UserReservation { id: number; product: Product; date: string; status: ReservationStatus; }
-interface AdminUser { id: number; name: string; email: string; phone: string; registeredAt: string; status: "Ativo" | "Inativo"; }
+interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  registeredAt: string;
+  status: "Ativo" | "Inativo";
+  tipo: "usuario" | "vendedor" | "admin";
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -200,6 +208,7 @@ useEffect(() => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminRole, setAdminRole] = useState<"admin" | "vendedor" | null>(null);
   const [userReservations, setUserReservations] = useState<UserReservation[]>(initReservations);
   const [orders, setOrders] = useState<Order[]>(initOrders);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -207,7 +216,7 @@ useEffect(() => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [adminTab, setAdminTab] = useState<AdminTabType>("dashboard");
   const [whatsapp, setWhatsapp] = useState("");
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(initAdminUsers);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
@@ -264,14 +273,20 @@ const handleAdminLogin = async (email: string, password: string) => {
 
     const dados = await resposta.json();
 
-    if (!resposta.ok || dados.usuario.tipo !== "admin") {
-      return false;
-    }
+    if (
+  !resposta.ok ||
+  !["admin", "vendedor"].includes(dados.usuario.tipo)
+) {
+  return false;
+}
 
-    localStorage.setItem("token", dados.token);
+localStorage.setItem("token", dados.token);
+localStorage.setItem("adminRole", dados.usuario.tipo);
 
-    setIsAdminLoggedIn(true);
-    setCurrentScreen("admin");
+setAdminRole(dados.usuario.tipo);
+setIsAdminLoggedIn(true);
+setAdminTab("dashboard");
+setCurrentScreen("admin");
 
     return true;
   } catch (error) {
@@ -280,8 +295,14 @@ const handleAdminLogin = async (email: string, password: string) => {
   }
 };
 
-  const handleAdminLogout = () => { setIsAdminLoggedIn(false); setCurrentScreen("home"); };
-
+const handleAdminLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("adminRole");
+  setAdminRole(null);
+  setAdminTab("dashboard");
+  setIsAdminLoggedIn(false);
+  setCurrentScreen("home");
+};
   const addToCart = (product: Product) => {
   if (product.status !== "disponivel") return;
 
@@ -1452,10 +1473,206 @@ function ProductCard({ product }: { product: Product }) {
     const [localAdminUsers, setLocalAdminUsers] = useState(adminUsers);
     const [localOrders, setLocalOrders] = useState(orders);
     const [showModal, setShowModal] = useState(false);
-    const [deleteId, setDeleteId] = useState<number|null>(null);
-    const [editingProduct, setEditingProduct] = useState<Product|null>(null);
-    const [whatsappInput, setWhatsappInput] = useState(whatsapp);
+    const [viewUser, setViewUser] = useState<AdminUser | null>(null);
+    const [editUser, setEditUser] = useState<AdminUser | null>(null);
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [userForm, setUserForm] = useState({
+  nome: "",
+  email: "",
+  senha: "",
+  tipo: "usuario"
+});
 
+const excluirUsuario = async (id: number) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    toast.error("Sessão administrativa não encontrada.");
+    return;
+  }
+
+  const confirmar = window.confirm(
+    "Tem certeza que deseja excluir este usuário?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    const resposta = await fetch(`${API_URL}/api/usuarios/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      toast.error(dados.erro || "Erro ao excluir usuário.");
+      return;
+    }
+
+    setLocalAdminUsers(prev =>
+      prev.filter(usuario => usuario.id !== id)
+    );
+
+    toast.success("Usuário excluído com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+    toast.error("Não foi possível excluir o usuário.");
+  }
+};
+
+const salvarEdicaoUsuario = async () => {
+  if (!editUser) return;
+
+  if (!editUser.name.trim() || !editUser.email.trim()) {
+    toast.error("Nome e e-mail são obrigatórios.");
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    toast.error("Sessão administrativa não encontrada.");
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/api/usuarios/${editUser.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        nome: editUser.name,
+        email: editUser.email,
+        tipo: editUser.tipo
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      toast.error(dados.erro || "Erro ao editar usuário.");
+      return;
+    }
+
+    setLocalAdminUsers(prev =>
+      prev.map(usuario =>
+        usuario.id === editUser.id
+          ? {
+              ...usuario,
+              name: dados.usuario.nome,
+              email: dados.usuario.email,
+              tipo: dados.usuario.tipo
+            }
+          : usuario
+      )
+    );
+
+    setEditUser(null);
+    toast.success("Usuário atualizado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao editar usuário:", error);
+    toast.error("Não foi possível editar o usuário.");
+  }
+};
+
+const cadastrarUsuarioAdmin = async () => {
+  if (!userForm.nome || !userForm.email || !userForm.senha || !userForm.tipo) {
+    toast.error("Preencha todos os campos.");
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    toast.error("Sessão administrativa não encontrada.");
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/api/usuarios/admin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(userForm)
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      toast.error(dados.erro || "Erro ao cadastrar usuário.");
+      return;
+    }
+
+    toast.success("Usuário cadastrado com sucesso!");
+
+    setUserForm({
+      nome: "",
+      email: "",
+      senha: "",
+      tipo: "usuario"
+    });
+
+    setShowUserModal(false);
+  } catch (error) {
+    console.error("Erro ao cadastrar usuário:", error);
+    toast.error("Não foi possível cadastrar o usuário.");
+  }
+};
+
+
+useEffect(() => {
+  if (adminRole !== "admin") return;
+
+  const carregarUsuarios = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    try {
+      const resposta = await fetch(`${API_URL}/api/usuarios`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        console.error("Erro ao carregar usuários:", dados);
+        return;
+      }
+
+      const usuariosConvertidos: AdminUser[] = dados.map((u: any) => ({
+        id: u.id,
+        name: u.nome,
+        email: u.email,
+        phone: "-",
+        registeredAt: u.criado_em
+          ? new Date(u.criado_em).toLocaleDateString("pt-BR")
+          : "-",
+        status: "Ativo",
+        tipo: u.tipo
+      }));
+
+      setLocalAdminUsers(usuariosConvertidos);
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+    }
+  };
+
+  carregarUsuarios();
+}, [adminRole]);
+
+const [deleteId, setDeleteId] = useState<number|null>(null);
+const [editingProduct, setEditingProduct] = useState<Product|null>(null);
+const [whatsappInput, setWhatsappInput] = useState(whatsapp);
 const salvarWhatsApp = async () => {
   const token = localStorage.getItem("token");
 
@@ -1600,7 +1817,7 @@ const salvarWhatsApp = async () => {
       toast.success("Produto atualizado!");
     } else {
       const resposta = await fetch(
-        "${API_URL}/api/produtos",
+        `${API_URL}/api/produtos`,
         {
           method: "POST",
           headers: {
@@ -1704,16 +1921,25 @@ const deleteProd = async (id: number) => {
       Vendido:allProducts.filter(p=>p.categoria===cat&&p.status==="vendido").length,
     }));
 
-    const tabs: {id:AdminTabType;label:string;I:React.ComponentType<{className?:string}>}[] = [
-      {id:"dashboard",label:"Dashboard",I:BarChart3},
-      {id:"users",label:"Usuários",I:Users},
-      {id:"products",label:"Produtos",I:Package},
-      {id:"categories",label:"Categorias",I:Filter},
-      {id:"reservations",label:"Reservas / Vendas",I:ShoppingBag},
-      {id:"reports",label:"Relatórios",I:TrendingUp},
-      {id:"whatsapp",label:"WhatsApp",I:Phone},
-    ];
+const tabs: {
+  id: AdminTabType;
+  label: string;
+  I: React.ComponentType<{className?: string}>
+}[] = [
+  {id:"dashboard", label:"Dashboard", I:BarChart3},
 
+  ...(adminRole === "admin"
+    ? [
+        {id:"users" as AdminTabType, label:"Usuários", I:Users},
+        {id:"categories" as AdminTabType, label:"Categorias", I:Filter},
+        {id:"reports" as AdminTabType, label:"Relatórios", I:TrendingUp},
+        {id:"whatsapp" as AdminTabType, label:"WhatsApp", I:Phone},
+      ]
+    : []),
+
+  {id:"products", label:"Produtos", I:Package},
+  {id:"reservations", label:"Reservas / Vendas", I:ShoppingBag},
+];
     return (
       <div className="flex min-h-screen bg-muted">
         {/* Sidebar */}
@@ -1755,16 +1981,18 @@ const deleteProd = async (id: number) => {
                 ))}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-border p-6">
+                  {adminRole === "admin" && (
+                  <div className="bg-white rounded-2xl border border-border p-6">
                   <h3 className="font-semibold text-lg mb-4">Usuários Recentes</h3>
                   <div className="space-y-3">{localAdminUsers.slice(0,4).map(u=>(
-                    <div key={u.id} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
-                      <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+                  <div key={u.id} className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+                  <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
                       <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{u.name}</p><p className="text-xs text-muted-foreground truncate">{u.email}</p></div>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.status==="Ativo"?"bg-green-100 text-green-700":"bg-gray-100 text-gray-600"}`}>{u.status}</span>
                     </div>
                   ))}</div>
                 </div>
+                )}
                 <div className="bg-white rounded-2xl border border-border p-6">
                   <h3 className="font-semibold text-lg mb-4">Pedidos Recentes</h3>
                   <div className="space-y-3">{localOrders.slice(0,3).map(o=>(
@@ -1780,10 +2008,17 @@ const deleteProd = async (id: number) => {
           )}
 
           {/* USERS */}
-          {adminTab==="users" && (
+
+
+          {adminRole === "admin" && adminTab === "users" && (
             <div>
               <div className="flex items-center justify-between mb-8"><div><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Usuários</h1><p className="text-muted-foreground mt-1">{localAdminUsers.length} cadastrados</p></div>
-                <button className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 flex items-center gap-2 font-medium"><Plus className="w-5 h-5" /> Novo Usuário</button>
+                <button
+  onClick={() => setShowUserModal(true)}
+  className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 flex items-center gap-2 font-medium"
+>
+  <Plus className="w-5 h-5" /> Novo Usuário
+</button>
               </div>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <div className="overflow-x-auto">
@@ -1797,11 +2032,24 @@ const deleteProd = async (id: number) => {
                         <td className="p-4 text-muted-foreground text-sm whitespace-nowrap">{u.registeredAt}</td>
                         <td className="p-4"><span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.status==="Ativo"?"bg-green-100 text-green-700":"bg-gray-100 text-gray-600"}`}>{u.status}</span></td>
                         <td className="p-4"><div className="flex gap-1">
-                          <button className="p-2 hover:bg-accent rounded-lg"><Eye className="w-4 h-4 text-primary" /></button>
-                          <button className="p-2 hover:bg-accent rounded-lg"><Edit className="w-4 h-4 text-secondary" /></button>
-                          <button onClick={() => setLocalAdminUsers(p=>p.map(x=>x.id===u.id?{...x,status:x.status==="Ativo"?"Inativo":"Ativo"}:x))} className={`p-2 rounded-lg ${u.status==="Ativo"?"hover:bg-red-50 text-red-500":"hover:bg-green-50 text-green-600"}`}>
-                            {u.status==="Ativo"?<X className="w-4 h-4"/>:<Check className="w-4 h-4"/>}
-                          </button>
+                         <button
+  onClick={() => setViewUser(u)}
+  className="p-2 hover:bg-accent rounded-lg"
+>
+  <Eye className="w-4 h-4 text-primary" />
+</button>
+                         <button
+  onClick={() => setEditUser(u)}
+  className="p-2 hover:bg-accent rounded-lg"
+>
+  <Edit className="w-4 h-4 text-secondary" />
+</button>
+                          <button
+  onClick={() => excluirUsuario(u.id)}
+  className="p-2 rounded-lg hover:bg-red-50 text-red-500"
+>
+  <X className="w-4 h-4" />
+</button>
                         </div></td>
                       </tr>
                     ))}</tbody>
@@ -1810,6 +2058,206 @@ const deleteProd = async (id: number) => {
               </div>
             </div>
           )}
+
+{editUser && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-2xl font-bold">Editar Usuário</h2>
+
+        <button
+          onClick={() => setEditUser(null)}
+          className="p-2 hover:bg-muted rounded-lg"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Nome</label>
+          <input
+            type="text"
+            value={editUser.name}
+            onChange={(e) =>
+              setEditUser({
+                ...editUser,
+                name: e.target.value
+              })
+            }
+            className="w-full border rounded-xl px-4 py-3"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">E-mail</label>
+          <input
+            type="email"
+            value={editUser.email}
+            onChange={(e) =>
+              setEditUser({
+                ...editUser,
+                email: e.target.value
+              })
+            }
+            className="w-full border rounded-xl px-4 py-3"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Perfil</label>
+          <select
+            value={editUser.tipo}
+            onChange={(e) =>
+              setEditUser({
+                ...editUser,
+                tipo: e.target.value as "usuario" | "vendedor" | "admin"
+              })
+            }
+            className="w-full border rounded-xl px-4 py-3"
+          >
+            <option value="usuario">Usuário</option>
+            <option value="vendedor">Vendedor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setEditUser(null)}
+            className="flex-1 py-3 border rounded-xl font-medium"
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={salvarEdicaoUsuario}
+            className="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90"
+          >
+            Salvar Alterações
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+{viewUser && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-2xl font-bold">Dados do Usuário</h2>
+
+        <button
+          onClick={() => setViewUser(null)}
+          className="p-2 hover:bg-muted rounded-lg"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Nome</p>
+          <p className="font-semibold">{viewUser.name}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">E-mail</p>
+          <p className="font-semibold">{viewUser.email}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Telefone</p>
+          <p className="font-semibold">{viewUser.phone}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Data de Cadastro</p>
+          <p className="font-semibold">{viewUser.registeredAt}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Status</p>
+          <p className="font-semibold">{viewUser.status}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+{showUserModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-2xl font-bold">Novo Usuário</h2>
+
+        <button
+          onClick={() => setShowUserModal(false)}
+          className="p-2 hover:bg-muted rounded-lg"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Nome"
+          value={userForm.nome}
+          onChange={(e) =>
+            setUserForm({ ...userForm, nome: e.target.value })
+          }
+          className="w-full border rounded-xl px-4 py-3"
+        />
+
+        <input
+          type="email"
+          placeholder="E-mail"
+          value={userForm.email}
+          onChange={(e) =>
+            setUserForm({ ...userForm, email: e.target.value })
+          }
+          className="w-full border rounded-xl px-4 py-3"
+        />
+
+        <input
+          type="password"
+          placeholder="Senha"
+          value={userForm.senha}
+          onChange={(e) =>
+            setUserForm({ ...userForm, senha: e.target.value })
+          }
+          className="w-full border rounded-xl px-4 py-3"
+        />
+
+        <select
+          value={userForm.tipo}
+          onChange={(e) =>
+            setUserForm({ ...userForm, tipo: e.target.value })
+          }
+          className="w-full border rounded-xl px-4 py-3"
+        >
+          <option value="usuario">Usuário</option>
+          <option value="vendedor">Vendedor</option>
+          <option value="admin">Administrador</option>
+        </select>
+
+        <button
+          onClick={cadastrarUsuarioAdmin}
+          className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90"
+        >
+          Cadastrar Usuário
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
 
           {/* PRODUCTS */}
           {adminTab==="products" && (
@@ -1883,7 +2331,9 @@ const deleteProd = async (id: number) => {
                             {(["Pendente","Reservada","Confirmada","Finalizada","Cancelada"] as OrderStatus[]).map(s=><option key={s}>{s}</option>)}
                           </select>
                         </td>
-                        <td className="p-4"><div className="flex gap-1"><button className="p-2 hover:bg-accent rounded-lg"><Eye className="w-4 h-4 text-primary" /></button><button className="p-2 hover:bg-green-50 rounded-lg"><MessageCircle className="w-4 h-4 text-green-600" /></button></div></td>
+                        <td className="p-4"><div className="flex gap-1"><button className="p-2 hover:bg-accent rounded-lg">
+  <Eye className="w-4 h-4 text-primary" />
+</button><button className="p-2 hover:bg-green-50 rounded-lg"><MessageCircle className="w-4 h-4 text-green-600" /></button></div></td>
                       </tr>
                     ))}</tbody>
                   </table>
