@@ -2023,13 +2023,22 @@ const tabs: {
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted border-b border-border"><tr>{["Usuário","E-mail","Telefone","Cadastro","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
+                    <thead className="bg-muted border-b border-border"><tr>{["Usuário","E-mail","Telefone","Cadastro","Perfil","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
                     <tbody>{localAdminUsers.map(u=>(
                       <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="p-4"><div className="flex items-center gap-3"><div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0"><User className="w-4 h-4 text-primary" /></div><span className="font-medium whitespace-nowrap">{u.name}</span></div></td>
                         <td className="p-4 text-muted-foreground text-sm">{u.email}</td>
                         <td className="p-4 text-muted-foreground text-sm whitespace-nowrap">{u.phone}</td>
                         <td className="p-4 text-muted-foreground text-sm whitespace-nowrap">{u.registeredAt}</td>
+
+<td className="p-4 text-sm whitespace-nowrap">
+  {u.tipo === "admin"
+    ? "Administrador"
+    : u.tipo === "vendedor"
+    ? "Vendedor"
+    : "Usuário"}
+</td>
+
                         <td className="p-4"><span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.status==="Ativo"?"bg-green-100 text-green-700":"bg-gray-100 text-gray-600"}`}>{u.status}</span></td>
                         <td className="p-4"><div className="flex gap-1">
                          <button
