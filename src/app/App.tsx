@@ -37,10 +37,18 @@ type OrderStatus = "Pendente" | "Reservada" | "Confirmada" | "Finalizada" | "Can
 interface Product {
   id: number; nome: string; categoria: Category;
   descricao: string; condicao: string; preco: number;
-  status: ProductStatus; imagem: string; imagens?: string[];
-}
+  status: ProductStatus; imagem: string; imagens?: string[];}
 interface CartItem { product: Product; quantity: number; }
-interface Order { id: number; items: CartItem[]; date: string; total: number; status: OrderStatus; }
+interface Order {
+  id: number;
+  items: CartItem[];
+  date: string;
+  total: number;
+  status: OrderStatus;
+  cliente?: string;
+  usuarioId?: number;
+  formaPagamento?: string;
+}
 interface UserType {
   id: number; name: string; birthDate: string; email: string;
   phone: string; address: string; city: string; state: string; cep: string;
@@ -210,7 +218,67 @@ useEffect(() => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminRole, setAdminRole] = useState<"admin" | "vendedor" | null>(null);
   const [userReservations, setUserReservations] = useState<UserReservation[]>(initReservations);
-  const [orders, setOrders] = useState<Order[]>(initOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+
+useEffect(() => {
+  if (!isAdminLoggedIn) return;
+
+  const carregarVendas = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    try {
+      const resposta = await fetch(`${API_URL}/api/vendas`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        console.error("Erro ao carregar vendas:", dados);
+        return;
+      }
+
+      const vendasConvertidas: Order[] = dados.map((v: any) => ({
+        id: v.id,
+        cliente: v.cliente || "Cliente",
+        usuarioId: v.usuario_id,
+        formaPagamento: v.forma_pagamento || "",
+        date: v.data_venda
+          ? new Date(v.data_venda).toLocaleDateString("pt-BR")
+          : "-",
+        total: Number(v.valor_total),
+        status: v.status as OrderStatus,
+        items: (v.itens || []).map((item: any) => ({
+          quantity: Number(item.quantidade),
+          product: {
+            id: item.produto_id,
+            nome: item.nome,
+            descricao: item.descricao || "",
+            categoria: item.categoria,
+            condicao: item.condicao || "",
+            preco: Number(item.preco_unitario),
+            status: item.status,
+            imagem: item.imagem || ""
+          }
+        }))
+      }));
+
+      setOrders(vendasConvertidas);
+
+    } catch (error) {
+      console.error("Erro ao carregar vendas:", error);
+    }
+  };
+
+  carregarVendas();
+}, [isAdminLoggedIn]);
+
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -248,13 +316,56 @@ const filteredProducts = allProducts.filter(p => {
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleLogin = (email: string) => {
+const handleLogin = async (email: string, password: string) => {
+  try {
+    const resposta = await fetch(`${API_URL}/api/usuarios/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        senha: password
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      toast.error(dados.erro || "E-mail ou senha inválidos.");
+      return;
+    }
+
+    localStorage.setItem("token", dados.token);
+
+    setCurrentUser({
+      id: dados.usuario.id,
+      name: dados.usuario.nome,
+      email: dados.usuario.email,
+      birthDate: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      cep: ""
+    });
+
     setIsLoggedIn(true);
-    setCurrentUser({...mockUser, email});
-    const dest = loginReturnTo === "login" ? "home" : loginReturnTo;
+
+    const dest =
+      loginReturnTo === "login" ? "home" : loginReturnTo;
+
     setLoginReturnTo("home");
     setCurrentScreen(dest);
-  };
+
+    toast.success("Login realizado com sucesso!");
+
+  } catch (error) {
+    console.error("Erro no login:", error);
+    toast.error("Não foi possível realizar o login.");
+  }
+};
+
 
   const handleLogout = () => { setIsLoggedIn(false); setCurrentUser(null); setUserMenuOpen(false); setCurrentScreen("home"); };
 
@@ -597,7 +708,7 @@ function ProductCard({ product }: { product: Product }) {
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <h1 className="text-2xl font-bold mb-1" style={{fontFamily:"Poppins,sans-serif"}}>Bem-vindo(a) de volta!</h1>
             <p className="text-muted-foreground text-sm mb-8">Entre na sua conta para continuar</p>
-            <form onSubmit={(e) => { e.preventDefault(); if (validate()) handleLogin(email); }} className="space-y-5">
+            <form onSubmit={(e) => { e.preventDefault(); if (validate()) handleLogin(email, password); }} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium mb-2">E-mail</label>
                 <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -2330,7 +2441,7 @@ const tabs: {
                     <tbody>{localOrders.map(o=>(
                       <tr key={o.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="p-4 text-muted-foreground text-sm">#{o.id}</td>
-                        <td className="p-4 font-medium whitespace-nowrap">{currentUser?.name||"Maria Silva"}</td>
+                        <td className="p-4 font-medium whitespace-nowrap">{o.cliente || "Cliente"}</td>
                         <td className="p-4 text-sm max-w-[160px] truncate">{o.items.map(i=>i.product.nome).join(", ")}</td>
                         <td className="p-4 text-sm text-center">{o.items.reduce((s,i)=>s+i.quantity,0)}</td>
                         <td className="p-4 font-semibold text-primary">R$ {o.total.toFixed(2)}</td>

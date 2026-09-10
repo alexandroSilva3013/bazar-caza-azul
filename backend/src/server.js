@@ -4,7 +4,7 @@ require("dotenv").config();
 const produtosRoutes = require("./produtos");
 const usuariosRoutes = require("./usuarios");
 const configuracoesRouter = require("./configuracoes");
-
+const vendasRoutes = require("./vendas");
 const pool = require("./db");
 
 const app = express();
@@ -19,6 +19,7 @@ app.use("/api/configuracoes", configuracoesRouter);
 
 app.use("/api/produtos", produtosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
+app.use("/api/vendas", vendasRoutes);
 
 // Rota de teste do servidor
 app.get("/api/health", (req, res) => {

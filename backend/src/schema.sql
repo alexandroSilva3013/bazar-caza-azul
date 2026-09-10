@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS vendas (
     usuario_id INTEGER REFERENCES usuarios(id),
     valor_total NUMERIC(10,2) NOT NULL,
     forma_pagamento VARCHAR(50),
-    data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(30) DEFAULT 'Pendente'
 );
 
 CREATE TABLE IF NOT EXISTS itens_venda (
