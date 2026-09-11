@@ -1831,6 +1831,26 @@ function ProductCard({ product }: { product: Product }) {
       ].join("\n");
       return `https://wa.me/?text=${encodeURIComponent(message)}`;
     };
+    const atualizarStatusVenda = async (order: Order, novoStatus: OrderStatus) => {
+      const token = localStorage.getItem("token");
+      if (!token) { toast.error("Sessão não encontrada."); return; }
+      try {
+        const resposta = await fetch(`${API_URL}/api/vendas/${order.id}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status: novoStatus })
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) { toast.error(dados.erro || "Erro ao atualizar o status."); return; }
+        setLocalOrders(prev => prev.map(venda => venda.id === order.id ? { ...venda, status: dados.venda.status } : venda));
+        setOrders(prev => prev.map(venda => venda.id === order.id ? { ...venda, status: dados.venda.status } : venda));
+        void refreshProducts();
+        toast.success("Status atualizado com sucesso!");
+      } catch (error) {
+        console.error("Erro ao atualizar status:", error);
+        toast.error("Não foi possível atualizar o status.");
+      }
+    };
     const [localAdminUsers, setLocalAdminUsers] = useState(adminUsers);
     const [localOrders, setLocalOrders] = useState(orders);
     const draft = (() => { try { const value = localStorage.getItem("bazar.productDraft"); return value ? JSON.parse(value) : null; } catch { return null; } })();
@@ -2750,9 +2770,9 @@ const tabs: {
           {/* RESERVATIONS */}
           {adminTab==="reservations" && (
             <div>
-              <h1 className="text-3xl font-bold mb-8" style={{fontFamily:"Poppins,sans-serif"}}>Reservas / Vendas</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold mb-5 lg:mb-8" style={{fontFamily:"Poppins,sans-serif"}}>Reservas / Vendas</h1>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
                     <thead translate="no" className="bg-muted border-b border-border"><tr>{["Número de venda","Cliente","Produtos","Qtd","Valor","Data","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
                     <tbody>{localOrders.map(o=>(
@@ -2823,6 +2843,30 @@ const tabs: {
                       </tr>
                     ))}</tbody>
                   </table>
+                </div>
+                <div className="lg:hidden divide-y divide-border">
+                  {localOrders.map(o => (
+                    <div key={o.id} className="p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Venda #{o.id}{o.origem === "reserva" && <span className="text-primary"> · Reserva</span>}</p>
+                          <p className="font-semibold truncate">{o.cliente || "Cliente"}</p>
+                          <p className="text-sm truncate">{o.items.map(i => i.product.nome).join(", ")}</p>
+                        </div>
+                        <span className="font-semibold text-primary whitespace-nowrap">R$ {o.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs text-muted-foreground">Qtd: {o.items.reduce((s, i) => s + i.quantity, 0)} · {o.date}</div>
+                        <select aria-label={`Status da venda ${o.id}`} value={o.status} onChange={e => void atualizarStatusVenda(o, e.target.value as OrderStatus)} className="text-xs px-2 py-1.5 rounded-lg border border-border bg-muted focus:outline-none focus:ring-2 focus:ring-primary/20">
+                          {(["Pendente", "Reservada", "Confirmada", "Finalizada", "Cancelada"] as OrderStatus[]).map(s => <option key={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex gap-1">
+                        <button type="button" onClick={() => setSelectedSale(o)} className="p-2 hover:bg-accent rounded-lg" aria-label={`Ver detalhes da venda ${o.id}`}><Eye className="w-4 h-4 text-primary" /></button>
+                        <a href={saleWhatsAppUrl(o)} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-green-50 rounded-lg" aria-label={`Compartilhar venda ${o.id} no WhatsApp`}><MessageCircle className="w-4 h-4 text-green-600" /></a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
