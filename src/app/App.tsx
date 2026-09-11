@@ -2359,7 +2359,7 @@ const tabs: {
           </div>
           <nav className="flex-none lg:flex-1 p-2 lg:p-4 grid grid-cols-2 lg:block content-start gap-1.5 lg:space-y-1">
             {tabs.map(t=>(
-              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full px-2 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl flex items-center justify-center lg:justify-start gap-1.5 lg:gap-3 font-medium text-[11px] lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
+              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full last:col-span-2 lg:last:col-span-1 px-2 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl flex items-center justify-center lg:justify-start gap-1.5 lg:gap-3 font-medium text-[11px] lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
                 <t.I className="w-4 h-4 lg:w-5 lg:h-5" />{t.label}
               </button>
             ))}
