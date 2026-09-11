@@ -10,7 +10,7 @@ import {
   Home as HomeIcon, Info, ArrowRight,
   CheckCircle2, User, LogOut, LogIn, UserPlus, Eye, EyeOff,
   ChevronDown, Lock, Calendar, AlertCircle,
-  ShoppingCart, Minus, Receipt, Shield
+  ShoppingCart, Minus, Receipt, Shield, Image as ImageIcon
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -32,7 +32,7 @@ type Screen =
 
 type ProductStatus = "disponivel" | "reservado" | "vendido" | "indisponivel";
 type Category = "Feminino" | "Masculino" | "Infantil" | "Calçados" | "Livros" | "Brinquedos" | "Acessórios";
-type AdminTabType = "dashboard" | "users" | "products" | "categories" | "reservations" | "reports" | "whatsapp";
+type AdminTabType = "dashboard" | "users" | "products" | "categories" | "reservations" | "reports" | "whatsapp" | "content";
 type ReservationStatus = "Pendente" | "Reservada" | "Aguardando Confirmação" | "Confirmada" | "Finalizada" | "Cancelada";
 type OrderStatus = "Pendente" | "Reservada" | "Confirmada" | "Finalizada" | "Cancelada";
 
@@ -71,6 +71,7 @@ interface AdminUser {
   status: "Ativo" | "Inativo";
   tipo: "usuario" | "vendedor" | "admin";
 }
+interface SiteContent { id: number; tipo: "banner" | "mensagem" | "popup" | "campanha"; titulo: string; texto: string; imagem_url?: string | null; link_url?: string | null; ativo: boolean; inicio_em?: string | null; fim_em?: string | null; ordem: number; }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -202,6 +203,13 @@ useEffect(() => {
     .catch(error => {
       console.error("Erro ao carregar WhatsApp:", error);
     });
+}, []);
+
+useEffect(() => {
+  fetch(`${API_URL}/api/conteudos`)
+    .then(res => res.ok ? res.json() : [])
+    .then((dados: SiteContent[]) => setSiteContents(dados))
+    .catch(() => setSiteContents([]));
 }, []);
 
 
@@ -410,6 +418,7 @@ useEffect(() => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [adminTab, setAdminTab] = useState<AdminTabType>("dashboard");
   const [whatsapp, setWhatsapp] = useState("");
+  const [siteContents, setSiteContents] = useState<SiteContent[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -1556,6 +1565,14 @@ function ProductCard({ product }: { product: Product }) {
   const HomeScreen = () => (
     <div className="min-h-screen bg-background">
       <Navbar />
+      {siteContents.filter(c => ["banner", "mensagem", "campanha"].includes(c.tipo)).slice(0, 1).map(c => (
+        <section key={c.id} className="pt-24 pb-4 px-4 bg-[#EAF2FF]">
+          <div className="container mx-auto max-w-6xl rounded-xl overflow-hidden bg-white border border-primary/20 shadow-sm flex flex-col sm:flex-row items-center">
+            {c.imagem_url && <img src={c.imagem_url} alt="" className="w-full sm:w-1/3 h-32 object-cover" />}
+            <div className="p-4 sm:p-5 flex-1"><p className="font-bold text-primary">{c.titulo}</p><p className="text-sm text-muted-foreground mt-1">{c.texto}</p>{c.link_url && <a href={c.link_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm font-semibold text-[#1F9B93] underline">Saiba mais</a>}</div>
+          </div>
+        </section>
+      ))}
       <section className="pt-32 pb-20 bg-gradient-to-br from-[#EAF2FF] via-white to-[#edf7f6]">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -2350,6 +2367,24 @@ const catData = CATEGORIES.map(cat=>({
       Vendido:allProducts.filter(p=>p.categoria===cat&&p.status==="vendido").length,
     }));
 
+    const [contentForm, setContentForm] = useState({ tipo: "banner" as SiteContent["tipo"], titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 });
+    const [editingContent, setEditingContent] = useState<number | null>(null);
+    const salvarConteudo = async () => {
+      const token = localStorage.getItem("token");
+      if (!token || !contentForm.titulo.trim()) { toast.error("Informe um título para o conteúdo."); return; }
+      try {
+        const response = await fetch(`${API_URL}/api/conteudos${editingContent ? `/${editingContent}` : ""}`, { method: editingContent ? "PUT" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(contentForm) });
+        const data = await response.json();
+        if (!response.ok) { toast.error(data.erro || "Não foi possível salvar o conteúdo."); return; }
+        setSiteContents(prev => editingContent ? prev.map(c => c.id === editingContent ? data.conteudo : c) : [...prev, data.conteudo]);
+        setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 }); toast.success("Conteúdo salvo com sucesso!");
+      } catch { toast.error("Não foi possível salvar o conteúdo."); }
+    };
+    const excluirConteudo = async (id: number) => {
+      const token = localStorage.getItem("token"); if (!token || !window.confirm("Excluir este conteúdo?")) return;
+      const response = await fetch(`${API_URL}/api/conteudos/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (response.ok) { setSiteContents(prev => prev.filter(c => c.id !== id)); toast.success("Conteúdo removido."); }
+    };
     const gerarRelatorioPdf = () => {
       const semAcentos = (valor: string) => valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const linhasBase = [
@@ -2421,6 +2456,7 @@ const tabs: {
         {id:"categories" as AdminTabType, label:"Categorias", I:Filter},
         {id:"reports" as AdminTabType, label:"Relatórios", I:TrendingUp},
         {id:"whatsapp" as AdminTabType, label:"WhatsApp", I:Phone},
+        {id:"content" as AdminTabType, label:"Conteúdo", I:ImageIcon},
       ]
     : []),
 
@@ -2936,6 +2972,22 @@ const tabs: {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {adminTab === "content" && (
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6"><div><h1 className="text-2xl lg:text-3xl font-bold">Conteúdo do site</h1><p className="text-sm text-muted-foreground mt-1">Banners, mensagens e campanhas publicados no site.</p></div><button onClick={() => { setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 }); }} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium">Novo conteúdo</button></div>
+              <div className="bg-white rounded-2xl border border-border p-4 mb-5 grid gap-3 md:grid-cols-2">
+                <select value={contentForm.tipo} onChange={e => setContentForm(f => ({ ...f, tipo: e.target.value as SiteContent["tipo"] }))} className="px-3 py-2.5 bg-muted rounded-lg border border-border"><option value="banner">Banner</option><option value="mensagem">Mensagem</option><option value="popup">Pop-up</option><option value="campanha">Campanha</option></select>
+                <input value={contentForm.titulo} onChange={e => setContentForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Título" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
+                <textarea value={contentForm.texto} onChange={e => setContentForm(f => ({ ...f, texto: e.target.value }))} placeholder="Texto da mensagem" rows={3} className="md:col-span-2 px-3 py-2.5 bg-muted rounded-lg border border-border" />
+                <input value={contentForm.imagem_url} onChange={e => setContentForm(f => ({ ...f, imagem_url: e.target.value }))} placeholder="Link da imagem (opcional)" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
+                <input value={contentForm.link_url} onChange={e => setContentForm(f => ({ ...f, link_url: e.target.value }))} placeholder="Link do botão (opcional)" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={contentForm.ativo} onChange={e => setContentForm(f => ({ ...f, ativo: e.target.checked }))} /> Publicado no site</label>
+                <button onClick={salvarConteudo} className="md:col-start-2 justify-self-end px-5 py-2.5 bg-primary text-white rounded-lg font-medium">{editingContent ? "Salvar alterações" : "Publicar conteúdo"}</button>
+              </div>
+              <div className="space-y-3">{siteContents.map(c => <div key={c.id} className="bg-white rounded-xl border border-border p-4 flex flex-wrap items-center gap-3"><div className="flex-1 min-w-[180px]"><span className="text-xs uppercase text-primary font-semibold">{c.tipo}</span><p className="font-semibold">{c.titulo}</p><p className="text-sm text-muted-foreground line-clamp-2">{c.texto}</p></div><span className={`text-xs px-2 py-1 rounded-full ${c.ativo ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>{c.ativo ? "Publicado" : "Rascunho"}</span><button onClick={() => { setEditingContent(c.id); setContentForm({ tipo: c.tipo, titulo: c.titulo, texto: c.texto, imagem_url: c.imagem_url || "", link_url: c.link_url || "", ativo: c.ativo, ordem: c.ordem }); }} className="p-2 text-primary">Editar</button><button onClick={() => excluirConteudo(c.id)} className="p-2 text-red-600">Excluir</button></div>)}</div>
             </div>
           )}
 

@@ -4,6 +4,7 @@ require("dotenv").config();
 const produtosRoutes = require("./produtos");
 const usuariosRoutes = require("./usuarios");
 const configuracoesRouter = require("./configuracoes");
+const conteudosRouter = require("./conteudos");
 const vendasRoutes = require("./vendas");
 const pool = require("./db");
 
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use("/api/configuracoes", configuracoesRouter);
+app.use("/api/conteudos", conteudosRouter);
 
 app.use("/api/produtos", produtosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
