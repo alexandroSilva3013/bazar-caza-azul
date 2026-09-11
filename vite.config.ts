@@ -19,7 +19,7 @@ function figmaAssetResolver() {
 export default defineConfig({
   server: {
     host: "0.0.0.0",
-    allowedHosts: true,
+    allowedHosts: [process.env.BAZAR_TUNNEL_HOST || "ringtones-escape-talent-merger.trycloudflare.com"],
     proxy: { "/api": "http://localhost:3001" },
   },
   plugins: [

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS produtos (
     status VARCHAR(30) DEFAULT 'disponivel',
     condicao VARCHAR(150),
     imagem TEXT,
+    imagens TEXT[] NOT NULL DEFAULT '{}',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

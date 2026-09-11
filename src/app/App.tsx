@@ -178,7 +178,7 @@ const initAdminUsers: AdminUser[] = [
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [currentScreen, setScreen] = useState<Screen>(() => localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home");
+  const [currentScreen, setScreen] = useState<Screen>(() => window.history.state?.bazarScreen || (localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home"));
   const setCurrentScreen = (screen: Screen) => {
     setScreen(screen);
     if (window.history.state?.bazarScreen !== screen) window.history.pushState({ bazarScreen: screen }, "", window.location.href);
@@ -217,8 +217,8 @@ useEffect(() => {
 }, []);
 
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => window.history.state?.product || null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | "all">(() => window.history.state?.category || "all");
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState<[number,number]>([0,100]);
   const [statusFilter, setStatusFilter] = useState<ProductStatus | "all">("all");
@@ -228,11 +228,16 @@ useEffect(() => {
   const [adminRole, setAdminRole] = useState<"admin" | "vendedor" | null>(null);
   useEffect(() => {
     localStorage.setItem("bazar.lastScreen", currentScreen);
-  }, [currentScreen]);
+    window.history.replaceState({ ...window.history.state, bazarScreen: currentScreen, product: selectedProduct, category: selectedCategory }, "", window.location.href);
+  }, [currentScreen, selectedProduct, selectedCategory]);
   useEffect(() => {
     if (!window.history.state?.bazarScreen) window.history.replaceState({ bazarScreen: currentScreen }, "", window.location.href);
     const onPopState = (event: PopStateEvent) => {
-      if (event.state?.bazarScreen) setScreen(event.state.bazarScreen as Screen);
+      if (event.state?.bazarScreen) {
+        setScreen(event.state.bazarScreen as Screen);
+        setSelectedProduct(event.state.product || null);
+        setSelectedCategory(event.state.category || "all");
+      }
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -245,7 +250,12 @@ useEffect(() => {
     fetch(API_URL + "/api/usuarios/perfil", { headers: { Authorization: "Bearer " + token } })
       .then(async response => {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.erro || "Sessão expirada.");
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem("token"); localStorage.removeItem("adminRole");
+          }
+          throw new Error(data.erro || "Não foi possível verificar a sessão.");
+        }
         if (!active) return;
         const user = data.usuario;
         if (["admin", "vendedor"].includes(user.tipo)) {
@@ -256,7 +266,7 @@ useEffect(() => {
           setIsLoggedIn(true); setIsAdminLoggedIn(false); setAdminRole(null);
         }
       })
-      .catch(() => { if (active) { localStorage.removeItem("token"); localStorage.removeItem("adminRole"); setCurrentScreen("home"); } });
+      .catch(() => { if (active) { toast.error("Não foi possível verificar sua sessão. Confira a conexão e atualize a página."); } });
     return () => { active = false; };
   }, []);
   const [userReservations, setUserReservations] = useState<UserReservation[]>([]);
@@ -1159,41 +1169,16 @@ function ProductCard({ product }: { product: Product }) {
     );
   };
 
-  const PasswordRecoveryScreen = () => {
-    const [email, setEmail] = useState("");
-    const [sent, setSent] = useState(false);
-    const [error, setError] = useState("");
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1A3972] to-[#3F6CBF] flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8"><button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3"><img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-20 w-auto bg-white p-2 rounded-xl" /></button></div>
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
-            {!sent ? (
-              <>
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5"><Lock className="w-7 h-7 text-primary" /></div>
-                <h1 className="text-2xl font-bold mb-1" style={{fontFamily:"Poppins,sans-serif"}}>Recuperar senha</h1>
-                <p className="text-muted-foreground text-sm mb-6">Digite seu e-mail para receber o link de recuperação.</p>
-                <form onSubmit={(e) => { e.preventDefault(); if (!email) { setError("E-mail é obrigatório"); return; } if (!/\S+@\S+\.\S+/.test(email)) { setError("E-mail inválido"); return; } window.location.href = "mailto:atendimento@casazul.org.br?subject=" + encodeURIComponent("Contato pelo bazar — " + form.name) + "&body=" + encodeURIComponent(form.message + "\n\nNome: " + form.name + "\nE-mail: " + form.email); }} className="space-y-4">
-                  <div><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="seu@email.com" className={`w-full pl-11 pr-4 py-3 bg-muted rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 ${error?"border-destructive":"border-border"}`} /></div>
-                    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
-                  </div>
-                  <button type="submit" className="w-full py-3.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold">Enviar Link</button>
-                </form>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5"><CheckCircle2 className="w-10 h-10 text-green-600" /></div>
-                <h2 className="text-xl font-bold mb-2" style={{fontFamily:"Poppins,sans-serif"}}>Link enviado!</h2>
-                <p className="text-muted-foreground text-sm">Verifique seu e-mail: <strong className="text-foreground">{email}</strong></p>
-              </div>
-            )}
-            <div className="mt-5 text-center"><button onClick={() => setCurrentScreen("login")} className="text-primary text-sm hover:underline flex items-center justify-center gap-1"><ChevronRight className="w-4 h-4 rotate-180" /> Voltar ao login</button></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const PasswordRecoveryScreen = () => (
+    <div className="min-h-screen bg-background"><Navbar />
+      <main className="max-w-lg mx-auto px-4 pt-32 pb-16">
+        <h1 className="text-2xl font-bold mb-4">Ajuda para acessar sua conta</h1>
+        <p className="mb-6">A recuperação automática por e-mail ainda não está disponível. Entre em contato com a equipe da Casa Azul para obter orientação. Nunca envie sua senha.</p>
+        <a href="mailto:atendimento@casazul.org.br?subject=Ajuda%20com%20acesso%20ao%20bazar" className="block rounded-xl bg-primary text-white p-3 text-center">Abrir e-mail para a equipe</a>
+        <button onClick={() => setCurrentScreen("login")} className="mt-4 text-primary">Voltar ao login</button>
+      </main>
+    </div>
+  );
 
   // ─── User Screens ──────────────────────────────────────────────────────────
 
@@ -1574,10 +1559,11 @@ function ProductCard({ product }: { product: Product }) {
 
   // ─── Content Screens ────────────────────────────────────────────────────────
 
+  const activeContents = siteContents.filter(c => c.ativo && (!c.inicio_em || new Date(c.inicio_em).getTime() <= Date.now()) && (!c.fim_em || new Date(c.fim_em).getTime() >= Date.now())).sort((a, b) => a.ordem - b.ordem || b.id - a.id);
   const HomeScreen = () => (
     <div className="min-h-screen bg-background">
       <Navbar />
-      {siteContents.filter(c => c.tipo === "popup" && !closedPopupIds.includes(c.id)).slice(0, 1).map(c => (
+      {activeContents.filter(c => c.tipo === "popup" && !closedPopupIds.includes(c.id)).slice(0, 1).map(c => (
         <div key={c.id} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
             <button type="button" aria-label="Fechar aviso" onClick={() => setClosedPopupIds(ids => [...ids, c.id])} className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xl text-foreground shadow">×</button>
@@ -1586,7 +1572,7 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       ))}
-      {siteContents.filter(c => ["banner", "mensagem", "campanha"].includes(c.tipo)).slice(0, 1).map(c => (
+      {activeContents.filter(c => ["banner", "mensagem", "campanha"].includes(c.tipo)).map(c => (
         <section key={c.id} className="pt-24 pb-4 px-4 bg-[#EAF2FF]">
           <div className="container mx-auto max-w-6xl rounded-xl overflow-hidden bg-white border border-primary/20 shadow-sm flex flex-col sm:flex-row items-center">
             {c.imagem_url && <img src={c.imagem_url} alt="" className="w-full sm:w-1/3 h-32 object-cover" />}
@@ -1738,7 +1724,9 @@ function ProductCard({ product }: { product: Product }) {
   );
 
   const ProductDetailScreen = () => {
+    const [photoIndex, setPhotoIndex] = useState(0);
     if (!selectedProduct) return null;
+    const photos = [selectedProduct.imagem, ...(selectedProduct.imagens || [])].filter(Boolean);
     const inCart = cart.some(i => i.product.id === selectedProduct.id);
     return (
       <div className="min-h-screen bg-background"><Navbar />
@@ -1746,7 +1734,8 @@ function ProductCard({ product }: { product: Product }) {
           <button onClick={() => setCurrentScreen("catalog")} className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium"><ChevronRight className="w-5 h-5 rotate-180" /> Voltar ao Catálogo</button>
           <div className="grid lg:grid-cols-2 gap-12">
             <div>
-              <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-muted mb-4"><ProductImage src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
+              <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-muted mb-4"><ProductImage src={photos[photoIndex] || selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
+              <div className="flex gap-3">{photos.map((photo, index) => <button key={index} onClick={() => setPhotoIndex(index)} aria-label={`Ver foto ${index + 1}`} aria-pressed={photoIndex === index} className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${photoIndex === index ? "border-primary" : "border-transparent"}`}><ProductImage src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" /></button>)}</div>
             </div>
             <div className="space-y-6">
               <div>
@@ -2144,6 +2133,7 @@ const salvarWhatsApp = async () => {
   preco:"",
   quantidade:"1",
   status:"disponivel" as ProductStatus,
+  imagens: [] as string[],
   imagem:""
 });
 useEffect(() => {
@@ -2160,7 +2150,8 @@ useEffect(() => {
     preco:"",
     quantidade:"1",
     status:"disponivel",
-    imagem:""
+    imagens: [] as string[],
+  imagem:""
   });
   setShowModal(true);
 };
@@ -2174,6 +2165,7 @@ useEffect(() => {
     preco:String(p.preco),
     quantidade:String(p.quantidade ?? 0),
     status:p.status,
+    imagens: p.imagens || [],
     imagem:p.imagem
   });
   setShowModal(true);
@@ -2222,6 +2214,7 @@ useEffect(() => {
       : { quantidade }),
     status: pForm.status,
     condicao: pForm.condicao,
+    imagens: pForm.imagens || [],
     imagem: imageUrl
   };
 
@@ -2253,7 +2246,7 @@ useEffect(() => {
         preco: Number(dados.produto.preco),
         condicao: dados.produto.condicao || "",
         imagem: dados.produto.imagem || "",
-        imagens: dados.produto.imagem
+        imagens: dados.produto.imagens || []
           ? [dados.produto.imagem]
           : []
       };
@@ -2289,7 +2282,7 @@ useEffect(() => {
         preco: Number(dados.produto.preco),
         condicao: dados.produto.condicao || "",
         imagem: dados.produto.imagem || "",
-        imagens: dados.produto.imagem
+        imagens: dados.produto.imagens || []
           ? [dados.produto.imagem]
           : []
       };
@@ -2388,7 +2381,7 @@ const catData = CATEGORIES.map(cat=>({
       Vendido:allProducts.filter(p=>p.categoria===cat&&p.status==="vendido").length,
     }));
 
-    const [contentForm, setContentForm] = useState({ tipo: "banner" as SiteContent["tipo"], titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 });
+    const [contentForm, setContentForm] = useState({ tipo: "banner" as SiteContent["tipo"], titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0, inicio_em: "", fim_em: "" });
     const [editingContent, setEditingContent] = useState<number | null>(null);
     const salvarConteudo = async () => {
       const token = localStorage.getItem("token");
@@ -2398,7 +2391,7 @@ const catData = CATEGORIES.map(cat=>({
         const data = await response.json();
         if (!response.ok) { toast.error(data.erro || "Não foi possível salvar o conteúdo."); return; }
         setSiteContents(prev => editingContent ? prev.map(c => c.id === editingContent ? data.conteudo : c) : [...prev, data.conteudo]);
-        setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 }); toast.success("Conteúdo salvo com sucesso!");
+        setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0, inicio_em: "", fim_em: "" }); toast.success("Conteúdo salvo com sucesso!");
       } catch { toast.error("Não foi possível salvar o conteúdo."); }
     };
     const excluirConteudo = async (id: number) => {
@@ -2998,17 +2991,21 @@ const tabs: {
 
           {adminTab === "content" && (
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-6"><div><h1 className="text-2xl lg:text-3xl font-bold">Conteúdo do site</h1><p className="text-sm text-muted-foreground mt-1">Banners, mensagens e campanhas publicados no site.</p></div><button onClick={() => { setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0 }); }} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium">Novo conteúdo</button></div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-6"><div><h1 className="text-2xl lg:text-3xl font-bold">Conteúdo do site</h1><p className="text-sm text-muted-foreground mt-1">Banners, mensagens e campanhas publicados no site.</p></div><button onClick={() => { setEditingContent(null); setContentForm({ tipo: "banner", titulo: "", texto: "", imagem_url: "", link_url: "", ativo: true, ordem: 0, inicio_em: "", fim_em: "" }); }} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium">Novo conteúdo</button></div>
               <div className="bg-white rounded-2xl border border-border p-4 mb-5 grid gap-3 md:grid-cols-2">
                 <select value={contentForm.tipo} onChange={e => setContentForm(f => ({ ...f, tipo: e.target.value as SiteContent["tipo"] }))} className="px-3 py-2.5 bg-muted rounded-lg border border-border"><option value="banner">Banner</option><option value="mensagem">Mensagem</option><option value="popup">Pop-up</option><option value="campanha">Campanha</option></select>
                 <input value={contentForm.titulo} onChange={e => setContentForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Título" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
                 <textarea value={contentForm.texto} onChange={e => setContentForm(f => ({ ...f, texto: e.target.value }))} placeholder="Texto da mensagem" rows={3} className="md:col-span-2 px-3 py-2.5 bg-muted rounded-lg border border-border" />
                 <input value={contentForm.imagem_url} onChange={e => setContentForm(f => ({ ...f, imagem_url: e.target.value }))} placeholder="Link da imagem (opcional)" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
                 <input value={contentForm.link_url} onChange={e => setContentForm(f => ({ ...f, link_url: e.target.value }))} placeholder="Link do botão (opcional)" className="px-3 py-2.5 bg-muted rounded-lg border border-border" />
+                <label className="text-sm">Início da publicação (opcional)<input type="datetime-local" value={contentForm.inicio_em} onChange={e => setContentForm(f => ({ ...f, inicio_em: e.target.value }))} className="block w-full px-3 py-2.5 bg-muted rounded-lg" /></label>
+                <label className="text-sm">Fim da publicação (opcional)<input type="datetime-local" value={contentForm.fim_em} onChange={e => setContentForm(f => ({ ...f, fim_em: e.target.value }))} className="block w-full px-3 py-2.5 bg-muted rounded-lg" /></label>
+                <label className="text-sm">Ordem de exibição (menores primeiro)<input type="number" min="0" step="1" value={contentForm.ordem} onChange={e => setContentForm(f => ({ ...f, ordem: Number(e.target.value) }))} className="block w-full px-3 py-2.5 bg-muted rounded-lg" /></label>
+                <p className="text-sm text-muted-foreground">Banners, mensagens e campanhas aparecem no início da página inicial, nesta ordem. Pop-ups aparecem sobre a página.</p>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={contentForm.ativo} onChange={e => setContentForm(f => ({ ...f, ativo: e.target.checked }))} /> Publicado no site</label>
                 <button onClick={salvarConteudo} className="md:col-start-2 justify-self-end px-5 py-2.5 bg-primary text-white rounded-lg font-medium">{editingContent ? "Salvar alterações" : "Publicar conteúdo"}</button>
               </div>
-              <div className="space-y-3">{siteContents.map(c => <div key={c.id} className="bg-white rounded-xl border border-border p-4 flex flex-wrap items-center gap-3"><div className="flex-1 min-w-[180px]"><span className="text-xs uppercase text-primary font-semibold">{c.tipo}</span><p className="font-semibold">{c.titulo}</p><p className="text-sm text-muted-foreground line-clamp-2">{c.texto}</p></div><span className={`text-xs px-2 py-1 rounded-full ${c.ativo ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>{c.ativo ? "Publicado" : "Rascunho"}</span><button onClick={() => { setEditingContent(c.id); setContentForm({ tipo: c.tipo, titulo: c.titulo, texto: c.texto, imagem_url: c.imagem_url || "", link_url: c.link_url || "", ativo: c.ativo, ordem: c.ordem }); }} className="p-2 text-primary">Editar</button><button onClick={() => excluirConteudo(c.id)} className="p-2 text-red-600">Excluir</button></div>)}</div>
+              <div className="space-y-3">{siteContents.map(c => <div key={c.id} className="bg-white rounded-xl border border-border p-4 flex flex-wrap items-center gap-3"><div className="flex-1 min-w-[180px]"><span className="text-xs uppercase text-primary font-semibold">{c.tipo}</span><p className="font-semibold">{c.titulo}</p><p className="text-sm text-muted-foreground line-clamp-2">{c.texto}</p></div><span className={`text-xs px-2 py-1 rounded-full ${c.ativo ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>{c.ativo ? "Publicado" : "Rascunho"}</span><button onClick={() => { setEditingContent(c.id); setContentForm({ tipo: c.tipo, titulo: c.titulo, texto: c.texto, imagem_url: c.imagem_url || "", link_url: c.link_url || "", ativo: c.ativo, ordem: c.ordem, inicio_em: c.inicio_em?.slice(0, 16) || "", fim_em: c.fim_em?.slice(0, 16) || "" }); }} className="p-2 text-primary">Editar</button><button onClick={() => excluirConteudo(c.id)} className="p-2 text-red-600">Excluir</button></div>)}</div>
             </div>
           )}
 
@@ -3190,6 +3187,7 @@ const tabs: {
                   </select>
                 </div>
                 <ProductPhotoPicker value={pForm.imagem} onChange={imagem => setPForm(f => ({ ...f, imagem }))} onBusyChange={setPhotoBusy} />
+                {[0, 1].map(index => <div key={index}><p className="text-sm font-medium mb-2">Foto adicional {index + 1}</p><ProductPhotoPicker value={pForm.imagens?.[index] || ""} onChange={photo => setPForm(f => { const images = [...(f.imagens || [])]; images[index] = photo; return { ...f, imagens: images.filter(Boolean) }; })} onBusyChange={setPhotoBusy} /></div>)}
               </div>
               <div className="p-6 border-t border-border flex gap-3 justify-end">
                 <button disabled={photoBusy || productSaving} onClick={() => setShowModal(false)} className="px-6 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 font-medium">Cancelar</button>

@@ -19,6 +19,9 @@ function validarProduto(req, res, next) {
     return res.status(400).json({ erro: "Informe nome, preço, quantidade e status válidos." });
   }
   if (!validProductImage(req.body.imagem)) return res.status(400).json({ erro: "Foto inválida. Escolha novamente a imagem ou informe um link http:// ou https://." });
+  if (req.body.imagens !== undefined && (!Array.isArray(req.body.imagens) || req.body.imagens.length > 2 || req.body.imagens.some(image => typeof image !== 'string' || !image || !validProductImage(image)))) {
+    return res.status(400).json({ erro: "Envie no máximo duas fotos adicionais válidas." });
+  }
   if (req.method === "PUT" && quantidade !== undefined &&
       (!Number.isInteger(req.body.quantidade_anterior) || req.body.quantidade_anterior < 0)) {
     return res.status(400).json({ erro: "Reabra o produto antes de alterar o estoque." });
@@ -65,10 +68,10 @@ router.post("/", autenticarToken, adminOuVendedor, validarProduto, async (req, r
 
   const resultado = await pool.query(
       `INSERT INTO produtos
-       (nome, descricao, categoria, preco, quantidade, status, condicao, imagem)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (nome, descricao, categoria, preco, quantidade, status, condicao, imagem, imagens)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [nome, descricao, categoria, preco, quantidade, status, condicao, imagem]
+      [nome, descricao, categoria, preco, quantidade, status, condicao, imagem, req.body.imagens || []]
     );
 
     res.status(201).json({
@@ -101,7 +104,8 @@ router.put("/:id", autenticarToken, adminOuVendedor, validarProduto, async (req,
            quantidade = COALESCE($5, quantidade),
            status = $6,
            condicao = $7,
-           imagem = $8
+           imagem = $8,
+           imagens = COALESCE($11::text[], imagens)
        WHERE id = $9 AND ($10::integer IS NULL OR quantidade = $10)
        RETURNING *`,
       [
@@ -114,7 +118,8 @@ router.put("/:id", autenticarToken, adminOuVendedor, validarProduto, async (req,
   condicao || null,
   imagem || null,
   id,
-  quantidade === undefined ? null : req.body.quantidade_anterior
+  quantidade === undefined ? null : req.body.quantidade_anterior,
+  req.body.imagens ?? null
 ]
     );
 

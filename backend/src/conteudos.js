@@ -13,8 +13,15 @@ function validar(body) {
       (link_url != null && (typeof link_url !== "string" || link_url.length > 2048)) || typeof ativo !== "boolean") {
     return "Informe tipo, título, texto e links válidos.";
   }
+  for (const value of [imagem_url, link_url]) {
+    if (!value) continue;
+    try { if (!["http:", "https:"].includes(new URL(value).protocol)) return "Use links http ou https."; }
+    catch { return "Informe um endereço completo e válido."; }
+  }
   if (inicio_em && Number.isNaN(Date.parse(inicio_em))) return "Data inicial inválida.";
   if (fim_em && Number.isNaN(Date.parse(fim_em))) return "Data final inválida.";
+  if (inicio_em && fim_em && Date.parse(fim_em) < Date.parse(inicio_em)) return "A data final deve ser posterior à inicial.";
+  if (body.ordem !== undefined && (!Number.isInteger(body.ordem) || body.ordem < 0 || body.ordem > 2147483647)) return "Informe uma ordem inteira e positiva ou zero.";
   return null;
 }
 
