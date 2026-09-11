@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("./db");
 const autenticarToken = require("./auth");
 const adminOuVendedor = require("./adminOuVendedor");
+const validProductImage = require("./productImage");
 
 const router = express.Router();
 router.param("id", (req, res, next, id) => {
@@ -16,6 +17,11 @@ function validarProduto(req, res, next) {
       (req.method === "POST" && quantidade === undefined) ||
       !["disponivel", "reservado", "vendido", "indisponivel"].includes(status)) {
     return res.status(400).json({ erro: "Informe nome, preço, quantidade e status válidos." });
+  }
+  if (!validProductImage(req.body.imagem)) return res.status(400).json({ erro: "Foto inválida. Escolha novamente a imagem ou informe um link http:// ou https://." });
+  if (req.method === "PUT" && quantidade !== undefined &&
+      (!Number.isInteger(req.body.quantidade_anterior) || req.body.quantidade_anterior < 0)) {
+    return res.status(400).json({ erro: "Reabra o produto antes de alterar o estoque." });
   }
   next();
 }
@@ -96,7 +102,7 @@ router.put("/:id", autenticarToken, adminOuVendedor, validarProduto, async (req,
            status = $6,
            condicao = $7,
            imagem = $8
-       WHERE id = $9
+       WHERE id = $9 AND ($10::integer IS NULL OR quantidade = $10)
        RETURNING *`,
       [
   nome,
@@ -107,11 +113,14 @@ router.put("/:id", autenticarToken, adminOuVendedor, validarProduto, async (req,
   status || "disponivel",
   condicao || null,
   imagem || null,
-  id
+  id,
+  quantidade === undefined ? null : req.body.quantidade_anterior
 ]
     );
 
     if (resultado.rows.length === 0) {
+      const exists = await pool.query("SELECT id FROM produtos WHERE id = $1", [id]);
+      if (exists.rows.length) return res.status(409).json({ erro: "O estoque mudou enquanto você editava. Reabra o produto e confira a quantidade antes de salvar." });
       return res.status(404).json({
         erro: "Produto não encontrado."
       });

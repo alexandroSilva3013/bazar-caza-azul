@@ -15,6 +15,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173"
 }));
 app.disable("x-powered-by");
+app.use("/api/produtos", express.json({ limit: "1mb" }));
 app.use(express.json());
 app.use((req, res, next) => {
   if (["POST", "PUT", "PATCH"].includes(req.method) && (!req.body || typeof req.body !== "object" || Array.isArray(req.body))) {

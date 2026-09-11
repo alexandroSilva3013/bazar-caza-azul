@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { ProductImage } from "./components/ProductImage";
+import { ProductPhotoPicker } from "./components/ProductPhotoPicker";
 import {
   Heart, ShoppingBag, Users, Book, Shirt, Baby,
   Footprints, Gamepad2, Watch, Search, Filter, Phone,
@@ -15,7 +17,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { toast, Toaster } from "sonner";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -175,7 +177,7 @@ const initAdminUsers: AdminUser[] = [
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("home");
+  const [currentScreen, setCurrentScreen] = useState<Screen>(() => localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home");
   const [loginReturnTo, setLoginReturnTo] = useState<Screen>("home");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
@@ -212,6 +214,31 @@ useEffect(() => {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminRole, setAdminRole] = useState<"admin" | "vendedor" | null>(null);
+  useEffect(() => {
+    localStorage.setItem("bazar.lastScreen", currentScreen);
+  }, [currentScreen]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    let active = true;
+    fetch(API_URL + "/api/usuarios/perfil", { headers: { Authorization: "Bearer " + token } })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.erro || "Sessão expirada.");
+        if (!active) return;
+        const user = data.usuario;
+        if (["admin", "vendedor"].includes(user.tipo)) {
+          setCurrentUser(null); setIsLoggedIn(false); setAdminRole(user.tipo); setIsAdminLoggedIn(true);
+          setAdminTab((localStorage.getItem("bazar.adminTab") as AdminTabType) || "products");
+        } else {
+          setCurrentUser({ id: user.id, name: user.nome, email: user.email, birthDate: "", phone: user.telefone || "", address: "", city: "", state: "", cep: "" });
+          setIsLoggedIn(true); setIsAdminLoggedIn(false); setAdminRole(null);
+        }
+      })
+      .catch(() => { if (active) { localStorage.removeItem("token"); localStorage.removeItem("adminRole"); setCurrentScreen("home"); } });
+    return () => { active = false; };
+  }, []);
   const [userReservations, setUserReservations] = useState<UserReservation[]>([]);
   const [reservationLoading, setReservationLoading] = useState(true);
   const [reservationError, setReservationError] = useState("");
@@ -428,9 +455,9 @@ const handleLogin = async (email: string, password: string) => {
       })
     });
 
-    const dados = await resposta.json();
+    const dados = await resposta.json().catch(() => ({}));
 
-    if (!resposta.ok) {
+    if (!resposta.ok || !dados?.token || !dados?.usuario) {
       toast.error(dados.erro || "E-mail ou senha inválidos.");
       return;
     }
@@ -485,10 +512,10 @@ const handleAdminLogin = async (email: string, password: string) => {
       })
     });
 
-    const dados = await resposta.json();
+    const dados = await resposta.json().catch(() => ({}));
 
     if (
-  !resposta.ok ||
+  !resposta.ok || !dados?.token || !dados?.usuario ||
   !["admin", "vendedor"].includes(dados.usuario.tipo)
 ) {
   return false;
@@ -828,10 +855,10 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group bg-card rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all">
       <div className="aspect-[4/5] overflow-hidden bg-muted">
-        <img
+        <ProductImage
           src={product.imagem}
           alt={product.nome}
-          onError={(event) => { event.currentTarget.style.display = "none"; }}
+
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
@@ -1216,7 +1243,7 @@ function ProductCard({ product }: { product: Product }) {
               {userReservations.map(res => (
                 <div key={res.id} className="bg-white rounded-2xl border border-border p-6 hover:shadow-md cursor-pointer" onClick={() => { setSelectedProduct(res.product); setCurrentScreen("product-detail"); }}>
                   <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0"><img src={res.product.imagem} alt={res.product.nome} className="w-full h-full object-cover" /></div>
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0"><ProductImage src={res.product.imagem} alt={res.product.nome} className="w-full h-full object-cover" /></div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div><p className="text-sm text-muted-foreground">Reserva nº {res.id}</p><h3 className="font-semibold text-lg">{res.product.nome}</h3><p className="text-muted-foreground text-sm">{res.product.categoria}</p>
@@ -1262,7 +1289,7 @@ function ProductCard({ product }: { product: Product }) {
                 <h3 className="font-semibold mb-4">Produtos</h3>
                 <div className="space-y-3">{selected.items.map((item,i)=>(
                   <div key={i} className="flex items-center gap-4 p-4 bg-muted rounded-xl">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"><img src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
+                    <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"><ProductImage src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
                     <div className="flex-1"><p className="font-medium">{item.product.nome}</p><p className="text-sm text-muted-foreground">{item.product.categoria}</p></div>
                     <div className="text-right"><p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p><p className="font-bold text-primary">R$ {(item.product.preco*item.quantity).toFixed(2)}</p></div>
                   </div>
@@ -1299,7 +1326,7 @@ function ProductCard({ product }: { product: Product }) {
                   <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border flex-shrink-0 ${statusCls[o.status]}`}>{o.status}</span>
                 </div>
                 <div className="flex items-center gap-3 mb-4">
-                  {o.items.slice(0,3).map((item,i)=>(<div key={i} className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted"><img src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>))}
+                  {o.items.slice(0,3).map((item,i)=>(<div key={i} className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted"><ProductImage src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>))}
                   {o.items.length > 3 && <span className="text-sm text-muted-foreground">+{o.items.length-3}</span>}
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-border">
@@ -1334,7 +1361,7 @@ function ProductCard({ product }: { product: Product }) {
               {cart.map(item=>(
                 <div key={item.product.id} className="bg-white rounded-2xl border border-border p-5">
                   <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0"><img src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0"><ProductImage src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{item.product.categoria}</div>
                       <h3 className="font-semibold leading-tight">{item.product.nome}</h3>
@@ -1408,7 +1435,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div className="space-y-3">
                   {cart.map(item=>(
                     <div key={item.product.id} className="flex items-center gap-4 p-4 bg-muted rounded-xl">
-                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"><img src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
+                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0"><ProductImage src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
                       <div className="flex-1 min-w-0"><p className="font-medium line-clamp-1">{item.product.nome}</p><p className="text-sm text-muted-foreground">{item.product.categoria}</p></div>
                       <div className="text-right flex-shrink-0"><p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p><p className="font-bold text-primary">R$ {(item.product.preco*item.quantity).toFixed(2)}</p></div>
                       <button onClick={() => removeFromCart(item.product.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-muted-foreground hover:text-red-500 flex-shrink-0"><X className="w-4 h-4" /></button>
@@ -1449,7 +1476,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div className="flex items-center justify-between mb-3"><p className="font-semibold">Pedido #{latest.id}</p><span className="text-xs px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full border border-yellow-200 font-medium">{latest.status}</span></div>
                 <div className="space-y-2 mb-3">{latest.items.map((item,i)=>(
                   <div key={i} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"><img src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"><ProductImage src={item.product.imagem} alt={item.product.nome} className="w-full h-full object-cover" /></div>
                     <span className="text-sm flex-1 line-clamp-1">{item.product.nome}</span>
                     <span className="text-sm font-medium text-primary">R$ {item.product.preco.toFixed(2)}</span>
                   </div>
@@ -1489,7 +1516,7 @@ function ProductCard({ product }: { product: Product }) {
               <div>
                 <h2 className="font-semibold text-lg mb-4">Produto</h2>
                 <div className="flex items-center gap-5 p-5 bg-muted rounded-2xl">
-                  <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0"><img src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
+                  <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0"><ProductImage src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
                   <div><div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{selectedProduct.categoria}</div><h3 className="font-semibold text-lg">{selectedProduct.nome}</h3><p className="text-2xl font-bold text-primary mt-1">R$ {selectedProduct.preco.toFixed(2)}</p></div>
                 </div>
               </div>
@@ -1517,7 +1544,7 @@ function ProductCard({ product }: { product: Product }) {
             <p className="text-muted-foreground mb-6 leading-relaxed">Clique em "Continuar para WhatsApp" para combinar os detalhes com a equipe da Casa Azul.</p>
             {selectedProduct && (
               <div className="flex items-center gap-4 p-4 bg-muted rounded-xl mb-8 text-left">
-                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0"><img src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
+                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0"><ProductImage src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
                 <div><p className="font-semibold">{selectedProduct.nome}</p><p className="text-primary font-bold text-lg">R$ {selectedProduct.preco.toFixed(2)}</p></div>
               </div>
             )}
@@ -1682,7 +1709,7 @@ function ProductCard({ product }: { product: Product }) {
           <button onClick={() => setCurrentScreen("catalog")} className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium"><ChevronRight className="w-5 h-5 rotate-180" /> Voltar ao Catálogo</button>
           <div className="grid lg:grid-cols-2 gap-12">
             <div>
-              <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-muted mb-4"><img src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
+              <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-muted mb-4"><ProductImage src={selectedProduct.imagem} alt={selectedProduct.nome} className="w-full h-full object-cover" /></div>
             </div>
             <div className="space-y-6">
               <div>
@@ -1806,7 +1833,8 @@ function ProductCard({ product }: { product: Product }) {
     };
     const [localAdminUsers, setLocalAdminUsers] = useState(adminUsers);
     const [localOrders, setLocalOrders] = useState(orders);
-    const [showModal, setShowModal] = useState(false);
+    const draft = (() => { try { const value = localStorage.getItem("bazar.productDraft"); return value ? JSON.parse(value) : null; } catch { return null; } })();
+    const [showModal, setShowModal] = useState(() => Boolean(draft?.open));
     const [viewUser, setViewUser] = useState<AdminUser | null>(null);
     const [editUser, setEditUser] = useState<AdminUser | null>(null);
     const [showUserModal, setShowUserModal] = useState(false);
@@ -2004,8 +2032,9 @@ useEffect(() => {
   carregarUsuarios();
 }, [adminRole]);
 
-const [deleteId, setDeleteId] = useState<number|null>(null);
-const [editingProduct, setEditingProduct] = useState<Product|null>(null);
+    const [deleteId, setDeleteId] = useState<number|null>(null);
+const [editingProduct, setEditingProduct] = useState<Product|null>(() => draft?.editingId ? allProducts.find(p => p.id === draft.editingId) || null : null);
+useEffect(() => { localStorage.setItem("bazar.adminTab", adminTab); }, [adminTab]);
 const [whatsappInput, setWhatsappInput] = useState(whatsapp);
 const salvarWhatsApp = async () => {
   const token = localStorage.getItem("token");
@@ -2047,15 +2076,22 @@ const salvarWhatsApp = async () => {
   }
 };
 
-    const [pForm, setPForm] = useState({
+    const [photoBusy, setPhotoBusy] = useState(false);
+    const [productSaving, setProductSaving] = useState(false);
+    const productSavingRef = useRef(false);
+    const [pForm, setPForm] = useState(() => draft?.form || {
   nome:"",
   categoria:"Feminino" as Category,
   descricao:"",
   condicao:"",
   preco:"",
+  quantidade:"1",
   status:"disponivel" as ProductStatus,
   imagem:""
 });
+useEffect(() => {
+  localStorage.setItem("bazar.productDraft", JSON.stringify({ open: showModal, editingId: editingProduct?.id || null, form: pForm }));
+}, [showModal, editingProduct?.id, pForm]);
 
     const openAdd = () => {
   setEditingProduct(null);
@@ -2065,6 +2101,7 @@ const salvarWhatsApp = async () => {
     descricao:"",
     condicao:"",
     preco:"",
+    quantidade:"1",
     status:"disponivel",
     imagem:""
   });
@@ -2078,6 +2115,7 @@ const salvarWhatsApp = async () => {
     descricao:p.descricao,
     condicao:p.condicao,
     preco:String(p.preco),
+    quantidade:String(p.quantidade ?? 0),
     status:p.status,
     imagem:p.imagem
   });
@@ -2085,11 +2123,29 @@ const salvarWhatsApp = async () => {
 };
 
   const saveProduct = async () => {
-  const preco = parseFloat(pForm.preco) || 0;
+  if (photoBusy || productSavingRef.current) return;
+  const preco = Number(pForm.preco);
+  const quantidade = Number(pForm.quantidade);
 
   if (!pForm.nome || !pForm.preco) {
     toast.error("Preencha nome e valor");
     return;
+  }
+
+  if (!Number.isFinite(preco) || preco < 0 || !/^\d+$/.test(pForm.quantidade) || !Number.isInteger(quantidade) || quantidade > 2147483647) {
+    toast.error("Informe um valor válido e uma quantidade inteira a partir de zero.");
+    return;
+  }
+
+  const imageUrl = pForm.imagem.trim();
+  if (imageUrl && !imageUrl.startsWith("data:image/jpeg;base64,")) {
+    try {
+      const url = new URL(imageUrl);
+      if (!["http:", "https:"].includes(url.protocol)) throw new Error("invalid image URL");
+    } catch {
+      toast.error("Informe um link de foto começando com http:// ou https://.");
+      return;
+    }
   }
 
   const token = localStorage.getItem("token");
@@ -2104,12 +2160,16 @@ const salvarWhatsApp = async () => {
     descricao: pForm.descricao,
     categoria: pForm.categoria,
     preco,
-    ...(editingProduct ? {} : { quantidade: 1 }),
+    ...(editingProduct
+      ? quantidade === Number(editingProduct.quantidade ?? 0) ? {} : { quantidade, quantidade_anterior: Number(editingProduct.quantidade ?? 0) }
+      : { quantidade }),
     status: pForm.status,
     condicao: pForm.condicao,
-    imagem: pForm.imagem
+    imagem: imageUrl
   };
 
+  productSavingRef.current = true;
+  setProductSaving(true);
   try {
     if (editingProduct) {
       const resposta = await fetch(
@@ -2127,6 +2187,7 @@ const salvarWhatsApp = async () => {
       const dados = await resposta.json();
 
       if (!resposta.ok) {
+        if (resposta.status === 409) void refreshProducts();
         throw new Error(dados.erro || "Erro ao atualizar produto.");
       }
 
@@ -2190,6 +2251,9 @@ const salvarWhatsApp = async () => {
         ? error.message
         : "Erro ao salvar produto."
     );
+  } finally {
+    productSavingRef.current = false;
+    setProductSaving(false);
   }
 };
 
@@ -2289,24 +2353,24 @@ const tabs: {
     return (
       <div className="flex min-h-screen bg-muted">
         {/* Sidebar */}
-        <div className="bg-white border-r border-border min-h-screen sticky top-0 w-64 flex flex-col flex-shrink-0">
+        <div className="bg-white border-b lg:border-r border-border w-full lg:w-64 lg:min-h-screen lg:sticky lg:top-0 flex flex-col flex-shrink-0">
           <div className="p-6 border-b border-border">
             <div className="flex items-center gap-3"><div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center"><Heart className="w-5 h-5 text-white fill-white" /></div><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
           </div>
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-3 lg:p-4 flex flex-wrap lg:block gap-1">
             {tabs.map(t=>(
-              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
+              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full lg:w-full flex-1 min-w-[135px] px-3 lg:px-4 py-3 rounded-xl flex items-center justify-center lg:justify-start gap-2 lg:gap-3 font-medium text-xs lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
                 <t.I className="w-5 h-5" />{t.label}
               </button>
             ))}
           </nav>
-          <div className="p-4 space-y-2 border-t border-border">
-            <button onClick={() => setCurrentScreen("home")} className="w-full px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl flex items-center gap-2 justify-center text-sm font-medium"><HomeIcon className="w-5 h-5" /> Voltar ao Site</button>
-            <button onClick={handleAdminLogout} className="w-full px-4 py-3 hover:bg-red-50 rounded-xl flex items-center gap-2 justify-center text-sm font-medium text-red-500"><LogOut className="w-5 h-5" /> Sair</button>
+          <div className="p-3 lg:p-4 flex lg:block gap-2 border-t border-border">
+            <button onClick={() => setCurrentScreen("home")} className="flex-1 px-3 lg:px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl flex items-center gap-2 justify-center text-xs lg:text-sm font-medium"><HomeIcon className="w-5 h-5" /> Voltar ao Site</button>
+            <button onClick={handleAdminLogout} className="flex-1 px-3 lg:px-4 py-3 hover:bg-red-50 rounded-xl flex items-center gap-2 justify-center text-xs lg:text-sm font-medium text-red-500"><LogOut className="w-5 h-5" /> Sair</button>
           </div>
         </div>
 
-        <div className="flex-1 p-8 overflow-auto">
+        <div className="flex-1 min-w-0 p-4 sm:p-8 overflow-auto">
           {/* DASHBOARD */}
           {adminTab==="dashboard" && (
             <div>
@@ -2623,13 +2687,14 @@ const tabs: {
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted border-b border-border"><tr>{["","Nome","Categoria","Preço","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground">{h}</th>)}</tr></thead>
+                    <thead translate="no" className="bg-muted border-b border-border"><tr>{["","Nome","Categoria","Preço","Estoque","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground">{h}</th>)}</tr></thead>
                     <tbody>{allProducts.map(p=>(
                       <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="p-4"><div className="w-14 h-14 rounded-xl overflow-hidden bg-muted"><img src={p.imagem} alt={p.nome} className="w-full h-full object-cover" /></div></td>
+                        <td className="p-4"><div className="w-14 h-14 rounded-xl overflow-hidden bg-muted"><ProductImage src={p.imagem} alt={p.nome} className="w-full h-full object-cover" /></div></td>
                         <td className="p-4 font-medium">{p.nome}</td>
                         <td className="p-4 text-muted-foreground text-sm">{p.categoria}</td>
                         <td className="p-4 font-semibold text-primary">R$ {p.preco.toFixed(2)}</td>
+                        <td className="p-4">{p.quantidade ?? 0}</td>
                         <td className="p-4"><StatusBadge status={p.status} /></td>
                         <td className="p-4"><div className="flex gap-1">
                           <button onClick={() => openEdit(p)} className="p-2 hover:bg-accent rounded-lg"><Edit className="w-4 h-4 text-primary" /></button>
@@ -2672,7 +2737,7 @@ const tabs: {
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted border-b border-border"><tr>{["Número de venda","Cliente","Produtos","Qtd","Valor","Data","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
+                    <thead translate="no" className="bg-muted border-b border-border"><tr>{["Número de venda","Cliente","Produtos","Qtd","Valor","Data","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
                     <tbody>{localOrders.map(o=>(
                       <tr key={o.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="p-4 text-muted-foreground text-sm">#{o.id}{o.origem === "reserva" && <span className="block text-xs text-primary">Reserva</span>}</td>
@@ -2850,7 +2915,7 @@ const tabs: {
                 <div className="p-6 border-b border-border"><h3 className="font-semibold text-lg">Histórico de Vendas</h3></div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted border-b border-border"><tr>{["#","Produtos","Qtd","Valor","Data","Status"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
+                    <thead translate="no" className="bg-muted border-b border-border"><tr>{["#","Produtos","Qtd","Valor","Data","Status"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
                     <tbody>{localOrders.map(o=>(
                       <tr key={o.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="p-4 text-sm text-muted-foreground">#{o.id}</td>
@@ -2893,11 +2958,11 @@ const tabs: {
           </dialog>
         )}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target===e.currentTarget) setShowModal(false); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-2 sm:p-4" onClick={e => { if (e.target===e.currentTarget && !photoBusy && !productSaving) setShowModal(false); }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <h2 className="text-xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>{editingProduct?"Editar Produto":"Adicionar Produto"}</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-muted rounded-lg"><X className="w-5 h-5" /></button>
+                <button disabled={photoBusy || productSaving} onClick={() => setShowModal(false)} className="p-2 hover:bg-muted rounded-lg"><X className="w-5 h-5" /></button>
               </div>
               <div className="p-6 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -2913,19 +2978,21 @@ const tabs: {
                   <div><label className="block text-sm font-medium mb-2">Estado de Conservação</label><input type="text" value={pForm.condicao} onChange={e => setPForm(f=>({...f,condicao:e.target.value}))} placeholder="Ex: Seminovo - Ótimo" className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" /></div>
                   <div><label className="block text-sm font-medium mb-2">Valor (R$) *</label><input type="number" step="0.01" min="0" value={pForm.preco} onChange={e => setPForm(f=>({...f,preco:e.target.value}))} placeholder="0,00" className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" /></div>
                 </div>
+                <div>
+                  <label htmlFor="product-quantity" className="block text-sm font-medium mb-2">Quantidade disponível em estoque *</label>
+                  <input id="product-quantity" type="number" min="0" max="2147483647" step="1" inputMode="numeric" value={pForm.quantidade} onChange={e => setPForm(f => ({ ...f, quantidade: e.target.value }))} className="w-full px-4 py-3 bg-muted rounded-xl border border-border" />
+                  <p className="mt-2 text-sm text-muted-foreground">Informe as unidades livres para compra ou reserva. Zero deixa o produto sem estoque.</p>
+                </div>
                 <div><label className="block text-sm font-medium mb-2">Status</label>
                   <select value={pForm.status} onChange={e => setPForm(f=>({...f,status:e.target.value as ProductStatus}))} className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20">
                     <option value="disponivel">Disponível</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option><option value="indisponivel">Indisponível</option>
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium mb-2">URL da Imagem</label>
-                  <input type="url" value={pForm.imagem} onChange={e => setPForm(f=>({...f,imagem:e.target.value}))} placeholder="https://..." className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  {pForm.imagem && <div className="mt-3 w-24 h-24 rounded-xl overflow-hidden bg-muted"><img src={pForm.imagem} alt="preview" className="w-full h-full object-cover" onError={e => {(e.target as HTMLImageElement).style.display="none";}} /></div>}
-                </div>
+                <ProductPhotoPicker value={pForm.imagem} onChange={imagem => setPForm(f => ({ ...f, imagem }))} onBusyChange={setPhotoBusy} />
               </div>
               <div className="p-6 border-t border-border flex gap-3 justify-end">
-                <button onClick={() => setShowModal(false)} className="px-6 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 font-medium">Cancelar</button>
-                <button onClick={saveProduct} className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium flex items-center gap-2"><Check className="w-4 h-4" />{editingProduct?"Salvar Alterações":"Adicionar Produto"}</button>
+                <button disabled={photoBusy || productSaving} onClick={() => setShowModal(false)} className="px-6 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 font-medium">Cancelar</button>
+                <button disabled={photoBusy || productSaving} onClick={saveProduct} className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium flex items-center gap-2 disabled:opacity-50"><Check className="w-4 h-4" />{productSaving ? "Salvando..." : photoBusy ? "Preparando foto..." : editingProduct?"Salvar Alterações":"Adicionar Produto"}</button>
               </div>
             </div>
           </div>

@@ -18,6 +18,29 @@ let pool, server, created=false;
  const token=jwt.sign({id:u,tipo:'admin'},process.env.JWT_SECRET);
  const p=(await pool.query("INSERT INTO produtos(nome,preco,quantidade) VALUES('Teste',10,2) RETURNING id")).rows[0].id;
  async function request(method,url,body,auth=token){const r=await fetch(base+url,{method,headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth}:{})},body:body?JSON.stringify(body):undefined});return {status:r.status,body:await r.json()};}
+ const jpeg = Buffer.from(require('./photo-fixture.cjs'), 'base64');
+ const comment = Buffer.concat([Buffer.from([0xff,0xfe,0xc3,0x52]), Buffer.alloc(50000,32)]);
+ const photo = 'data:image/jpeg;base64,' + Buffer.concat([jpeg.subarray(0,2),comment,comment,comment,jpeg.subarray(2)]).toString('base64');
+ const productInput = {nome:'Produto com foto',preco:12,quantidade:3,status:'disponivel',imagem:photo};
+ assert.equal((await request('POST','/produtos',productInput,null)).status,401);
+ const createdProduct = await request('POST','/produtos',productInput);
+ assert.equal(createdProduct.status,201);
+ const photoId = createdProduct.body.produto.id;
+ assert.equal(createdProduct.body.produto.quantidade,3);
+ const persisted = (await request('GET','/produtos')).body.find(p=>p.id===photoId);
+ assert.equal(persisted.imagem,photo);
+ assert.equal((await request('PUT','/produtos/'+photoId,{...productInput,quantidade:0,quantidade_anterior:3})).status,200);
+ assert.equal((await request('PUT','/produtos/'+photoId,{...productInput,quantidade:7,quantidade_anterior:3})).status,409);
+ assert.equal(Number((await pool.query('SELECT quantidade FROM produtos WHERE id=$1',[photoId])).rows[0].quantidade),0);
+ const {quantidade:ignoredQuantity,...photoOnly} = productInput;
+ assert.equal((await request('PUT','/produtos/'+photoId,{...photoOnly,imagem:''})).status,200);
+ const afterRemoval = (await request('GET','/produtos')).body.find(p=>p.id===photoId);
+ assert.equal(afterRemoval.quantidade,0);assert.equal(afterRemoval.imagem,null);
+ for (const imagem of ['data:text/html;base64,PHNjcmlwdD4=', 'data:image/jpeg;base64,aGVsbG8=', 'file:///foto.jpg', 'data:image/jpeg;base64,'+'A'.repeat(700000)]) {
+   assert.equal((await request('POST','/produtos',{...productInput,imagem})).status,400);
+ }
+ assert.equal((await request('POST','/produtos',{...productInput,quantidade:1.5})).status,400);
+ console.log('PASS: foto JPEG acima de 100 KB, persistência, remoção, quantidade zero, proteção de estoque e rejeição de uploads inválidos.');
  assert.equal((await request('POST','/produtos',{nome:'Inválido',preco:-1,quantidade:1,status:'disponivel'})).status,400);
  assert.equal((await request('POST','/produtos',{nome:'Inválido',preco:1,quantidade:-1,status:'disponivel'})).status,400);
  assert.equal((await request('POST','/vendas/reservas',{itens:[{produto_id:p,quantidade:1}]},null)).status,401);
