@@ -178,7 +178,11 @@ const initAdminUsers: AdminUser[] = [
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>(() => localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home");
+  const [currentScreen, setScreen] = useState<Screen>(() => localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home");
+  const setCurrentScreen = (screen: Screen) => {
+    setScreen(screen);
+    if (window.history.state?.bazarScreen !== screen) window.history.pushState({ bazarScreen: screen }, "", window.location.href);
+  };
   const [loginReturnTo, setLoginReturnTo] = useState<Screen>("home");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
@@ -225,6 +229,14 @@ useEffect(() => {
   useEffect(() => {
     localStorage.setItem("bazar.lastScreen", currentScreen);
   }, [currentScreen]);
+  useEffect(() => {
+    if (!window.history.state?.bazarScreen) window.history.replaceState({ bazarScreen: currentScreen }, "", window.location.href);
+    const onPopState = (event: PopStateEvent) => {
+      if (event.state?.bazarScreen) setScreen(event.state.bazarScreen as Screen);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
