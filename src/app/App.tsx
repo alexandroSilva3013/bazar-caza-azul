@@ -2681,11 +2681,11 @@ const tabs: {
           {/* PRODUCTS */}
           {adminTab==="products" && (
             <div>
-              <div className="flex items-center justify-between mb-8"><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Produtos</h1>
-                <button onClick={openAdd} className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 flex items-center gap-2 font-medium"><Plus className="w-5 h-5" /> Adicionar Produto</button>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5 lg:mb-8"><h1 className="text-2xl lg:text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Produtos</h1>
+                <button onClick={openAdd} className="px-3 lg:px-6 py-2 lg:py-3 bg-primary text-white rounded-lg lg:rounded-xl hover:bg-primary/90 flex items-center gap-1.5 lg:gap-2 font-medium text-xs lg:text-base whitespace-nowrap"><Plus className="w-4 h-4 lg:w-5 lg:h-5" /><span className="sm:hidden">Adicionar</span><span className="hidden sm:inline">Adicionar Produto</span></button>
               </div>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
                     <thead translate="no" className="bg-muted border-b border-border"><tr>{["","Nome","Categoria","Preço","Estoque","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground">{h}</th>)}</tr></thead>
                     <tbody>{allProducts.map(p=>(
@@ -2703,6 +2703,23 @@ const tabs: {
                       </tr>
                     ))}</tbody>
                   </table>
+                </div>
+                <div className="lg:hidden divide-y divide-border">
+                  {allProducts.map(p => (
+                    <div key={p.id} className="p-3 flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted flex-shrink-0"><ProductImage src={p.imagem} alt={p.nome} className="w-full h-full object-cover" /></div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">{p.nome}</p>
+                        <p className="text-xs text-muted-foreground truncate">{p.categoria}</p>
+                        <div className="flex items-center gap-2 mt-1"><span className="font-semibold text-primary text-sm">R$ {p.preco.toFixed(2)}</span><span className="text-xs text-muted-foreground">Estoque: {p.quantidade ?? 0}</span></div>
+                        <div className="mt-1"><StatusBadge status={productAvailability(p)} /></div>
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button aria-label={`Editar ${p.nome}`} onClick={() => openEdit(p)} className="p-2 hover:bg-accent rounded-lg"><Edit className="w-4 h-4 text-primary" /></button>
+                        <button aria-label={`Excluir ${p.nome}`} onClick={() => setDeleteId(p.id)} className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
