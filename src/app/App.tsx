@@ -794,9 +794,9 @@ const handleAdminLogout = () => {
               <button onClick={() => setCurrentScreen("admin-login")} className="flex items-center gap-2 text-white/50 hover:text-white/80 transition-colors text-xs">
                 <Shield className="w-3.5 h-3.5" /> Área Administrativa
               </button>
-              <button onClick={() => setCurrentScreen("db-model")} className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs mt-2">
+              {isAdminLoggedIn && adminRole === "admin" && <button onClick={() => setCurrentScreen("db-model")} className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs mt-2">
                 <BarChart3 className="w-3.5 h-3.5" /> Modelo Físico BD
-              </button>
+              </button>}
             </div>
           </div>
         </div>
@@ -3487,7 +3487,7 @@ const tabs: {
       case "password-recovery": return <PasswordRecoveryScreen />;
       case "admin-login": return <AdminLoginScreen />;
       case "admin": return isAdminLoggedIn ? <AdminScreen /> : <AdminLoginScreen />;
-      case "db-model": return <DBModelScreen />;
+      case "db-model": return isAdminLoggedIn && adminRole === "admin" ? <DBModelScreen /> : <HomeScreen />;
       case "profile": return isLoggedIn ? <ProfileScreen /> : <LoginScreen />;
       case "my-reservations": return isLoggedIn ? <MyReservationsScreen /> : <LoginScreen />;
       case "purchase-history": return isLoggedIn ? <PurchaseHistoryScreen /> : <LoginScreen />;
