@@ -794,9 +794,6 @@ const handleAdminLogout = () => {
               <button onClick={() => setCurrentScreen("admin-login")} className="flex items-center gap-2 text-white/50 hover:text-white/80 transition-colors text-xs">
                 <Shield className="w-3.5 h-3.5" /> Área Administrativa
               </button>
-              {isAdminLoggedIn && adminRole === "admin" && <button onClick={() => setCurrentScreen("db-model")} className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors text-xs mt-2">
-                <BarChart3 className="w-3.5 h-3.5" /> Modelo Físico BD
-              </button>}
             </div>
           </div>
         </div>
@@ -2434,6 +2431,11 @@ const tabs: {
               </button>
             ))}
           </nav>
+          {isAdminLoggedIn && adminRole === "admin" && (
+            <button type="button" onClick={() => setCurrentScreen("db-model")} className="mx-4 mb-3 px-3 py-2 flex items-center gap-2 text-sm text-primary rounded-lg hover:bg-muted">
+              <BarChart3 className="w-4 h-4" /> Modelo Físico BD
+            </button>
+          )}
           <div className="p-2 lg:p-4 flex lg:block gap-1.5 lg:gap-2 border-t border-border">
             <button onClick={() => setCurrentScreen("home")} className="flex-1 px-2 lg:px-4 py-2 lg:py-3 bg-muted hover:bg-muted/80 rounded-lg lg:rounded-xl flex items-center gap-1.5 lg:gap-2 justify-center text-[11px] lg:text-sm font-medium"><HomeIcon className="w-4 h-4 lg:w-5 lg:h-5" /> Voltar ao Site</button>
             <button onClick={handleAdminLogout} className="flex-1 px-2 lg:px-4 py-2 lg:py-3 hover:bg-red-50 rounded-lg lg:rounded-xl flex items-center gap-1.5 lg:gap-2 justify-center text-[11px] lg:text-sm font-medium text-red-500"><LogOut className="w-4 h-4 lg:w-5 lg:h-5" /> Sair</button>
