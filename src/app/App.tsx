@@ -2354,19 +2354,19 @@ const tabs: {
       <div className="flex min-h-screen bg-muted">
         {/* Sidebar */}
         <div className="bg-white border-b lg:border-r border-border w-full lg:w-64 lg:min-h-screen lg:sticky lg:top-0 flex flex-col flex-shrink-0">
-          <div className="p-6 border-b border-border">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center"><Heart className="w-5 h-5 text-white fill-white" /></div><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
+          <div className="p-4 lg:p-6 border-b border-border">
+            <div className="flex items-center gap-2.5 lg:gap-3"><div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center"><Heart className="w-4 h-4 lg:w-5 lg:h-5 text-white fill-white" /></div><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
           </div>
-          <nav className="flex-1 p-3 lg:p-4 flex flex-wrap lg:block gap-1">
+          <nav className="flex-1 p-2 lg:p-4 grid grid-cols-2 lg:block gap-1.5 lg:space-y-1">
             {tabs.map(t=>(
-              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full lg:w-full flex-1 min-w-[135px] px-3 lg:px-4 py-3 rounded-xl flex items-center justify-center lg:justify-start gap-2 lg:gap-3 font-medium text-xs lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
-                <t.I className="w-5 h-5" />{t.label}
+              <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full px-2 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl flex items-center justify-center lg:justify-start gap-1.5 lg:gap-3 font-medium text-[11px] lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
+                <t.I className="w-4 h-4 lg:w-5 lg:h-5" />{t.label}
               </button>
             ))}
           </nav>
-          <div className="p-3 lg:p-4 flex lg:block gap-2 border-t border-border">
-            <button onClick={() => setCurrentScreen("home")} className="flex-1 px-3 lg:px-4 py-3 bg-muted hover:bg-muted/80 rounded-xl flex items-center gap-2 justify-center text-xs lg:text-sm font-medium"><HomeIcon className="w-5 h-5" /> Voltar ao Site</button>
-            <button onClick={handleAdminLogout} className="flex-1 px-3 lg:px-4 py-3 hover:bg-red-50 rounded-xl flex items-center gap-2 justify-center text-xs lg:text-sm font-medium text-red-500"><LogOut className="w-5 h-5" /> Sair</button>
+          <div className="p-2 lg:p-4 flex lg:block gap-1.5 lg:gap-2 border-t border-border">
+            <button onClick={() => setCurrentScreen("home")} className="flex-1 px-2 lg:px-4 py-2 lg:py-3 bg-muted hover:bg-muted/80 rounded-lg lg:rounded-xl flex items-center gap-1.5 lg:gap-2 justify-center text-[11px] lg:text-sm font-medium"><HomeIcon className="w-4 h-4 lg:w-5 lg:h-5" /> Voltar ao Site</button>
+            <button onClick={handleAdminLogout} className="flex-1 px-2 lg:px-4 py-2 lg:py-3 hover:bg-red-50 rounded-lg lg:rounded-xl flex items-center gap-1.5 lg:gap-2 justify-center text-[11px] lg:text-sm font-medium text-red-500"><LogOut className="w-4 h-4 lg:w-5 lg:h-5" /> Sair</button>
           </div>
         </div>
 
