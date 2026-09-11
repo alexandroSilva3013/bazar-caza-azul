@@ -2357,7 +2357,7 @@ const tabs: {
           <div className="p-4 lg:p-6 border-b border-border">
             <div className="flex items-center gap-2.5 lg:gap-3"><div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center"><Heart className="w-4 h-4 lg:w-5 lg:h-5 text-white fill-white" /></div><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
           </div>
-          <nav className="flex-1 p-2 lg:p-4 grid grid-cols-2 lg:block gap-1.5 lg:space-y-1">
+          <nav className="flex-none lg:flex-1 p-2 lg:p-4 grid grid-cols-2 lg:block content-start gap-1.5 lg:space-y-1">
             {tabs.map(t=>(
               <button key={t.id} onClick={() => setAdminTab(t.id)} className={`w-full px-2 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl flex items-center justify-center lg:justify-start gap-1.5 lg:gap-3 font-medium text-[11px] lg:text-sm transition-colors ${adminTab===t.id?"bg-primary text-white":"hover:bg-muted text-foreground"}`}>
                 <t.I className="w-4 h-4 lg:w-5 lg:h-5" />{t.label}
