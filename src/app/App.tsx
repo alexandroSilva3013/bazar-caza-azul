@@ -1688,7 +1688,7 @@ function ProductCard({ product }: { product: Product }) {
   const CatalogScreen = () => (
     <div className="min-h-screen bg-background"><Navbar />
       <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8">
-        <div className="mb-8"><h1 className="text-3xl md:text-4xl font-bold mb-2" style={{fontFamily:"Poppins,sans-serif"}}>Catálogo de Produtos</h1><p className="text-muted-foreground">{filteredProducts.length} produtos encontrados</p></div>
+        <div className="mb-8"><h1 translate="no" className="notranslate text-3xl md:text-4xl font-bold mb-2" style={{fontFamily:"Poppins,sans-serif"}}>Catálogo de Produtos</h1><p className="text-muted-foreground">{filteredProducts.length} produtos encontrados</p></div>
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl border border-border p-6 sticky top-28 space-y-6">
