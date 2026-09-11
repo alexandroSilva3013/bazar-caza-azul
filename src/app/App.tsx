@@ -666,25 +666,25 @@ const handleAdminLogout = () => {
   // ─── Shared Components ─────────────────────────────────────────────────────
 
   const Navbar = () => (
-    <nav className="fixed top-0 left-0 right-0 bg-white border-b border-border z-50 shadow-sm">
+    <nav className="site-navbar fixed top-0 left-0 right-0 bg-[#3F6CBF] border-b border-white/20 z-50 shadow-sm">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <button onClick={() => { setCurrentScreen("home"); setMobileMenuOpen(false); setUserMenuOpen(false); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto — início" className="h-16 w-auto object-contain shrink-0" />
-            <span className="hidden sm:block text-sm font-medium text-primary">Bazar Solidário</span>
+          <button onClick={() => { setCurrentScreen("home"); setMobileMenuOpen(false); setUserMenuOpen(false); }} aria-label="Voltar à página inicial" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto — início" className="h-16 w-auto object-contain shrink-0 bg-white rounded-lg p-1.5 shadow-sm" />
+            <span className="hidden sm:block text-sm font-medium text-white">Bazar Solidário</span>
           </button>
 
           <div className="hidden lg:flex items-center gap-6">
             {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
-              <button key={s} translate="no" onClick={() => setCurrentScreen(s as Screen)} className="text-foreground hover:text-primary transition-colors font-medium">{l}</button>
+              <button key={s} translate="no" onClick={() => setCurrentScreen(s as Screen)} className="text-white hover:text-white/80 transition-colors font-medium">{l}</button>
             ))}
-            <button onClick={() => setCurrentScreen("cart")} className="relative p-2 hover:bg-accent rounded-xl transition-colors">
+            <button onClick={() => setCurrentScreen("cart")} className="relative p-2 text-white hover:bg-white/15 rounded-xl transition-colors">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
             </button>
             {!isLoggedIn ? (
               <div className="flex items-center gap-2">
-                <button onClick={() => { setLoginReturnTo("home"); setCurrentScreen("login"); }} className="px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors font-medium flex items-center gap-2">
+                <button onClick={() => { setLoginReturnTo("home"); setCurrentScreen("login"); }} className="px-4 py-2 text-primary bg-white border border-white rounded-lg hover:bg-primary hover:text-white transition-colors font-medium flex items-center gap-2">
                   <LogIn className="w-4 h-4" /> Entrar
                 </button>
                 <button onClick={() => setCurrentScreen("register")} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2">
@@ -719,18 +719,18 @@ const handleAdminLogout = () => {
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
-            <button onClick={() => setCurrentScreen("cart")} className="relative p-2 hover:bg-accent rounded-xl transition-colors">
+            <button onClick={() => setCurrentScreen("cart")} className="relative p-2 text-white hover:bg-white/15 rounded-xl transition-colors">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
             </button>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 hover:bg-muted rounded-lg transition-colors">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-white hover:bg-white/15 rounded-lg transition-colors">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 space-y-1 border-t border-border">
+          <div className="lg:hidden p-3 mb-3 bg-white text-foreground rounded-xl space-y-1 border border-border">
             {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
               <button key={s} translate="no" onClick={() => { setCurrentScreen(s as Screen); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg font-medium">{l}</button>
             ))}
@@ -911,7 +911,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl"><Heart className="w-8 h-8 text-primary fill-primary" /></div>
+              <img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-20 w-auto bg-white p-2 rounded-xl" />
               <div><div className="text-white font-bold text-2xl" style={{fontFamily:"Poppins,sans-serif"}}>Casa Azul</div><div className="text-white/70 text-sm">Bazar Solidário</div></div>
             </button>
           </div>
@@ -968,7 +968,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex flex-col items-center gap-3">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl"><Shield className="w-8 h-8 text-primary" /></div>
+              <button type="button" aria-label="Voltar à página inicial" onClick={() => setCurrentScreen("home")}><img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-20 w-auto bg-white p-2 rounded-xl" /></button>
               <div><div className="text-white font-bold text-2xl" style={{fontFamily:"Poppins,sans-serif"}}>Área Administrativa</div><div className="text-white/70 text-sm">Casa Azul — Bazar Solidário</div></div>
             </div>
           </div>
@@ -1077,7 +1077,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
             <button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl"><Heart className="w-8 h-8 text-primary fill-primary" /></div>
+              <img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-20 w-auto bg-white p-2 rounded-xl" />
               <div className="text-white font-bold text-2xl" style={{fontFamily:"Poppins,sans-serif"}}>Casa Azul</div>
             </button>
           </div>
@@ -1141,7 +1141,7 @@ function ProductCard({ product }: { product: Product }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1A3972] to-[#3F6CBF] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8"><button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3"><div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl"><Heart className="w-8 h-8 text-primary fill-primary" /></div></button></div>
+          <div className="text-center mb-8"><button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3"><img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-20 w-auto bg-white p-2 rounded-xl" /></button></div>
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             {!sent ? (
               <>
@@ -2422,7 +2422,7 @@ const tabs: {
         {/* Sidebar */}
         <div className="bg-white border-b lg:border-r border-border w-full lg:w-64 lg:min-h-screen lg:sticky lg:top-0 flex flex-col flex-shrink-0">
           <div className="p-4 lg:p-6 border-b border-border">
-            <div className="flex items-center gap-2.5 lg:gap-3"><div className="w-9 h-9 lg:w-10 lg:h-10 bg-primary rounded-full flex items-center justify-center"><Heart className="w-4 h-4 lg:w-5 lg:h-5 text-white fill-white" /></div><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
+            <div className="flex items-center gap-2.5 lg:gap-3"><button type="button" aria-label="Voltar à página inicial" onClick={() => setCurrentScreen("home")} className="rounded-lg bg-white p-1 border border-primary/20"><img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto" className="h-14 w-auto" /></button><div><div className="font-bold text-primary">Casa Azul</div><div className="text-xs text-muted-foreground">Painel Admin</div></div></div>
           </div>
           <nav className="flex-none lg:flex-1 p-2 lg:p-4 grid grid-cols-2 lg:block content-start gap-1.5 lg:space-y-1">
             {tabs.map(t=>(
