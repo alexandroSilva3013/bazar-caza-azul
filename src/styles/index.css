@@ -4,6 +4,7 @@
 
 /* Interação consistente para controles acionáveis, inclusive os que usam apenas classes utilitárias. */
 button:not(:disabled) {
+  cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 button:not(:disabled):hover {
