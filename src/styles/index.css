@@ -2,6 +2,22 @@
 @import './tailwind.css';
 @import './theme.css';
 
+/* Interação consistente para controles acionáveis, inclusive os que usam apenas classes utilitárias. */
+button:not(:disabled) {
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+button:not(:disabled):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ring) 45%, transparent);
+  outline-offset: 2px;
+}
+
 /* Ilustrações usadas no site institucional, acompanhando a rolagem. */
 .institutional-scroll {
   background-color: #3F6CBF;
