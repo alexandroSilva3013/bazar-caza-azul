@@ -952,7 +952,7 @@ function ProductCard({ product }: { product: Product }) {
               <button type="submit" className="w-full py-3.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold shadow-lg">Entrar</button>
             </form>
             <div className="mt-5 text-center"><span className="text-muted-foreground text-sm">Não tem uma conta? </span><button onClick={() => setCurrentScreen("register")} className="text-primary font-semibold text-sm hover:underline">Criar conta grátis</button></div>
-            <div className="mt-4 p-3 bg-accent rounded-xl text-xs text-center text-muted-foreground"><strong className="text-primary">Demo:</strong> use qualquer e-mail e senha válidos</div>
+            <div className="mt-4 p-3 bg-accent rounded-xl text-xs text-center text-muted-foreground">Use o e-mail e a senha cadastrados no sistema.</div>
 
             {/* ADMIN ACCESS — destaque */}
             <div className="mt-5 pt-5 border-t border-border">
@@ -1135,7 +1135,7 @@ function ProductCard({ product }: { product: Product }) {
               </div>
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input type="checkbox" checked={form.acceptTerms} onChange={e => set("acceptTerms",e.target.checked)} className="w-4 h-4 mt-0.5 rounded text-primary" />
-                <span className="text-sm text-muted-foreground">Li e concordo com os <button type="button" className="text-primary hover:underline font-medium">Termos de Uso</button> e <button type="button" className="text-primary hover:underline font-medium">Política de Privacidade</button></span>
+                <span className="text-sm text-muted-foreground">Li e concordo com os termos de uso e a política de privacidade da Casa Azul.</span>
               </label>
               {errors.acceptTerms && <p className="text-destructive text-xs">{errors.acceptTerms}</p>}
               <button type="submit" disabled={saving} className="disabled:opacity-60 disabled:cursor-wait w-full py-3.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg">{saving ? "Criando conta..." : "Criar Conta"}</button>
@@ -1206,7 +1206,6 @@ function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="flex-1 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium flex items-center justify-center gap-2"><Edit className="w-4 h-4" /> Editar Perfil</button>
             <button onClick={() => setCurrentScreen("purchase-history")} className="flex-1 py-3 bg-accent text-primary rounded-xl hover:bg-accent/80 font-medium flex items-center justify-center gap-2"><Receipt className="w-4 h-4" /> Histórico</button>
           </div>
         </div></div>
@@ -2862,13 +2861,13 @@ const tabs: {
           {adminTab==="categories" && (
             <div>
               <div className="flex items-center justify-between mb-8"><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Categorias</h1>
-                <button className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 flex items-center gap-2 font-medium"><Plus className="w-5 h-5" /> Nova Categoria</button>
+                <p className="text-sm text-muted-foreground">Categorias padrão do catálogo</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {CATEGORIES.map((cat,i)=>(
                   <div key={i} className="bg-white rounded-2xl border border-border p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">{cat}</h3>
-                      <div className="flex gap-1"><button className="p-2 hover:bg-accent rounded-lg"><Edit className="w-4 h-4 text-primary" /></button><button className="p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4 text-destructive" /></button></div>
+                      <span className="text-xs text-muted-foreground">Usada no catálogo</span>
                     </div>
                     <div className="flex items-center gap-4 text-sm">
                       <span className="text-muted-foreground">{allProducts.filter(p=>p.categoria===cat).length} produto(s)</span>
