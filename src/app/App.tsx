@@ -419,6 +419,7 @@ useEffect(() => {
   const [adminTab, setAdminTab] = useState<AdminTabType>("dashboard");
   const [whatsapp, setWhatsapp] = useState("");
   const [siteContents, setSiteContents] = useState<SiteContent[]>([]);
+  const [closedPopupIds, setClosedPopupIds] = useState<number[]>([]);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -1565,6 +1566,15 @@ function ProductCard({ product }: { product: Product }) {
   const HomeScreen = () => (
     <div className="min-h-screen bg-background">
       <Navbar />
+      {siteContents.filter(c => c.tipo === "popup" && !closedPopupIds.includes(c.id)).slice(0, 1).map(c => (
+        <div key={c.id} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <button type="button" aria-label="Fechar aviso" onClick={() => setClosedPopupIds(ids => [...ids, c.id])} className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xl text-foreground shadow">×</button>
+            {c.imagem_url && <img src={c.imagem_url} alt="" className="h-40 w-full object-cover" />}
+            <div className="p-6"><h2 className="text-xl font-bold text-primary">{c.titulo}</h2><p className="mt-2 text-muted-foreground">{c.texto}</p>{c.link_url && <a href={c.link_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-white">Saiba mais</a>}</div>
+          </div>
+        </div>
+      ))}
       {siteContents.filter(c => ["banner", "mensagem", "campanha"].includes(c.tipo)).slice(0, 1).map(c => (
         <section key={c.id} className="pt-24 pb-4 px-4 bg-[#EAF2FF]">
           <div className="container mx-auto max-w-6xl rounded-xl overflow-hidden bg-white border border-primary/20 shadow-sm flex flex-col sm:flex-row items-center">
