@@ -159,7 +159,7 @@ const sampleProducts: Product[] = [
     imagem: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=500&fit=crop"
   }
 ];
-const mockUser: UserType = { id:1, name:"Maria Silva", birthDate:"15/03/1990", email:"maria@email.com", phone:"(11) 98765-4321", address:"Rua das Flores, 456", city:"São Paulo", state:"SP", cep:"01234-567" };
+const mockUser: UserType = { id:1, name:"Maria Silva", birthDate:"15/03/1990", email:"maria@email.com", phone:"(61) 3359-2095", address:"Rua das Flores, 456", city:"São Paulo", state:"SP", cep:"01234-567" };
 
 const initOrders: Order[] = [
   { id:1, items:[{product:sampleProducts[0],quantity:1},{product:sampleProducts[4],quantity:1}], date:"10/01/2024", total:50, status:"Confirmada" },
@@ -167,7 +167,7 @@ const initOrders: Order[] = [
 ];
 
 const initAdminUsers: AdminUser[] = [
-  { id:1, name:"Maria Silva", email:"maria@email.com", phone:"(11) 98765-4321", registeredAt:"15/01/2024", status:"Ativo" },
+  { id:1, name:"Maria Silva", email:"maria@email.com", phone:"(61) 3359-2095", registeredAt:"15/01/2024", status:"Ativo" },
   { id:2, name:"João Santos", email:"joao@email.com", phone:"(11) 91234-5678", registeredAt:"10/01/2024", status:"Ativo" },
   { id:3, name:"Ana Paula Costa", email:"ana.paula@email.com", phone:"(11) 99876-5432", registeredAt:"05/01/2024", status:"Ativo" },
   { id:4, name:"Carlos Oliveira", email:"carlos@email.com", phone:"(11) 97654-3210", registeredAt:"28/12/2023", status:"Inativo" },
@@ -765,7 +765,7 @@ const handleAdminLogout = () => {
   );
 
   const Footer = () => (
-    <footer className="bg-[#163E8F] text-white py-16">
+    <footer className="bg-[#1A3972] text-white py-16">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div>
@@ -778,9 +778,9 @@ const handleAdminLogout = () => {
           <div>
             <h4 className="font-semibold mb-4 text-lg">Contato</h4>
             <div className="space-y-3">
-              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-sm opacity-90">Rua da Esperança, 123<br />Centro - São Paulo, SP</span></div>
-              <div className="flex items-center gap-3"><Phone className="w-5 h-5 flex-shrink-0" /><span className="text-sm opacity-90">(11) 98765-4321</span></div>
-              <div className="flex items-center gap-3"><Mail className="w-5 h-5 flex-shrink-0" /><span className="text-sm opacity-90">contato@casaazul.org</span></div>
+              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-sm opacity-90">QN 315, Conjunto F, Lotes 1/4<br />Samambaia - DF</span></div>
+              <div className="flex items-center gap-3"><Phone className="w-5 h-5 flex-shrink-0" /><span className="text-sm opacity-90">(61) 3359-2095</span></div>
+              <div className="flex items-center gap-3"><Mail className="w-5 h-5 flex-shrink-0" /><span className="text-sm opacity-90">atendimento@casazul.org.br</span></div>
             </div>
           </div>
           <div>
@@ -792,12 +792,7 @@ const handleAdminLogout = () => {
             </div>
           </div>
           <div>
-            <h4 className="font-semibold mb-4 text-lg">Redes Sociais</h4>
-            <div className="flex gap-3 mb-6">
-              {[Facebook, Instagram, MessageCircle].map((Icon,i) => (
-                <button key={i} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"><Icon className="w-5 h-5" /></button>
-              ))}
-            </div>
+            <h4 className="font-semibold mb-4 text-lg">Conheça a instituição</h4><a href="https://www.casazulfelipeaugusto.org.br/" target="_blank" rel="noopener noreferrer" className="inline-block underline mb-4">Visite o site oficial</a>
             <div className="border-t border-white/20 pt-4">
               <button onClick={() => setCurrentScreen("admin-login")} className="flex items-center gap-2 text-white/50 hover:text-white/80 transition-colors text-xs">
                 <Shield className="w-3.5 h-3.5" /> Área Administrativa
@@ -809,7 +804,7 @@ const handleAdminLogout = () => {
           </div>
         </div>
         <div className="border-t border-white/20 mt-12 pt-8 text-center text-sm opacity-80">
-          © 2024 Casa Azul - Bazar Solidário. Todos os direitos reservados.
+          © {new Date().getFullYear()} Casa Azul Felipe Augusto · Bazar Solidário.
         </div>
       </div>
     </footer>
@@ -918,7 +913,7 @@ function ProductCard({ product }: { product: Product }) {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#163E8F] via-[#1a4aab] to-[#2F5FD0] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-[#1A3972] via-[#1a4aab] to-[#3F6CBF] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3">
@@ -954,7 +949,7 @@ function ProductCard({ product }: { product: Product }) {
 
             {/* ADMIN ACCESS — destaque */}
             <div className="mt-5 pt-5 border-t border-border">
-              <button onClick={() => setCurrentScreen("admin-login")} className="w-full py-3 flex items-center justify-center gap-2 bg-[#0f2557]/5 hover:bg-[#0f2557]/10 border border-[#163E8F]/20 rounded-xl transition-colors text-[#163E8F] font-medium text-sm">
+              <button onClick={() => setCurrentScreen("admin-login")} className="w-full py-3 flex items-center justify-center gap-2 bg-[#0f2557]/5 hover:bg-[#0f2557]/10 border border-[#1A3972]/20 rounded-xl transition-colors text-[#1A3972] font-medium text-sm">
                 <Shield className="w-4 h-4" /> Área Administrativa
               </button>
               <p className="text-center text-xs text-muted-foreground mt-2">Acesso exclusivo para administradores</p>
@@ -975,7 +970,7 @@ function ProductCard({ product }: { product: Product }) {
     const [error, setError] = useState("");
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0b1a3b] via-[#163E8F] to-[#1a4aab] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-[#0b1a3b] via-[#1A3972] to-[#1a4aab] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex flex-col items-center gap-3">
@@ -1011,7 +1006,7 @@ function ProductCard({ product }: { product: Product }) {
                 </div>
                 {error && <p className="text-destructive text-xs mt-1.5 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
               </div>
-              <button type="submit" className="w-full py-3.5 bg-[#163E8F] text-white rounded-xl hover:bg-[#163E8F]/90 font-semibold shadow-lg">Acessar Painel</button>
+              <button type="submit" className="w-full py-3.5 bg-[#1A3972] text-white rounded-xl hover:bg-[#1A3972]/90 font-semibold shadow-lg">Acessar Painel</button>
             </form>
   
             <div className="mt-5 pt-5 border-t border-border text-center">
@@ -1073,7 +1068,7 @@ function ProductCard({ product }: { product: Product }) {
     };
 
     if (done) return (
-      <div className="min-h-screen bg-gradient-to-br from-[#163E8F] to-[#2F5FD0] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#1A3972] to-[#3F6CBF] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-2xl p-12 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-10 h-10 text-green-600" /></div>
           <h2 className="text-2xl font-bold mb-3" style={{fontFamily:"Poppins,sans-serif"}}>Conta criada com sucesso!</h2>
@@ -1084,7 +1079,7 @@ function ProductCard({ product }: { product: Product }) {
     );
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#163E8F] to-[#2F5FD0] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-[#1A3972] to-[#3F6CBF] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
             <button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3">
@@ -1150,7 +1145,7 @@ function ProductCard({ product }: { product: Product }) {
     const [sent, setSent] = useState(false);
     const [error, setError] = useState("");
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#163E8F] to-[#2F5FD0] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-[#1A3972] to-[#3F6CBF] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8"><button onClick={() => setCurrentScreen("home")} className="inline-flex flex-col items-center gap-3"><div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl"><Heart className="w-8 h-8 text-primary fill-primary" /></div></button></div>
           <div className="bg-white rounded-2xl shadow-2xl p-8">
@@ -1159,7 +1154,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5"><Lock className="w-7 h-7 text-primary" /></div>
                 <h1 className="text-2xl font-bold mb-1" style={{fontFamily:"Poppins,sans-serif"}}>Recuperar senha</h1>
                 <p className="text-muted-foreground text-sm mb-6">Digite seu e-mail para receber o link de recuperação.</p>
-                <form onSubmit={(e) => { e.preventDefault(); if (!email) { setError("E-mail é obrigatório"); return; } if (!/\S+@\S+\.\S+/.test(email)) { setError("E-mail inválido"); return; } setSent(true); }} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); if (!email) { setError("E-mail é obrigatório"); return; } if (!/\S+@\S+\.\S+/.test(email)) { setError("E-mail inválido"); return; } window.location.href = "mailto:atendimento@casazul.org.br?subject=" + encodeURIComponent("Contato pelo bazar — " + form.name) + "&body=" + encodeURIComponent(form.message + "\n\nNome: " + form.name + "\nE-mail: " + form.email); }} className="space-y-4">
                   <div><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="seu@email.com" className={`w-full pl-11 pr-4 py-3 bg-muted rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 ${error?"border-destructive":"border-border"}`} /></div>
                     {error && <p className="text-destructive text-xs mt-1">{error}</p>}
@@ -1189,7 +1184,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="min-h-screen bg-background"><Navbar />
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-3xl">
           <div className="mb-8"><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Meu Perfil</h1><p className="text-muted-foreground mt-1">Informações da sua conta</p></div>
-          <div className="bg-gradient-to-r from-[#163E8F] to-[#2F5FD0] rounded-2xl p-8 mb-6 text-white">
+          <div className="bg-gradient-to-r from-[#1A3972] to-[#3F6CBF] rounded-2xl p-8 mb-6 text-white">
             <div className="flex items-center gap-5">
               <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center"><User className="w-10 h-10 text-white" /></div>
               <div><h2 className="text-2xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>{currentUser.name}</h2><p className="text-white/80 text-sm">{currentUser.email}</p><span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-medium">Membro Ativo</span></div>
@@ -1279,7 +1274,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-3xl">
           <button onClick={() => setSelected(null)} className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium"><ChevronRight className="w-5 h-5 rotate-180" /> Voltar ao Histórico</button>
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="bg-gradient-to-r from-[#163E8F] to-[#2F5FD0] p-6 text-white">
+            <div className="bg-gradient-to-r from-[#1A3972] to-[#3F6CBF] p-6 text-white">
               <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Pedido #{selected.id}</h2><p className="text-white/80 text-sm mt-1">{selected.date}</p></div>
                 <span className="px-3 py-1.5 bg-white/20 border border-white/30 rounded-full text-xs font-semibold">{selected.status}</span>
               </div>
@@ -1416,7 +1411,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-3xl">
           <button onClick={() => setCurrentScreen("cart")} className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium"><ChevronRight className="w-5 h-5 rotate-180" /> Voltar ao Carrinho</button>
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="bg-gradient-to-r from-[#163E8F] to-[#2F5FD0] p-6 text-white">
+            <div className="bg-gradient-to-r from-[#1A3972] to-[#3F6CBF] p-6 text-white">
               <h1 className="text-2xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Finalizar Compra</h1>
               <p className="text-white/80 text-sm mt-1">Revise seus dados e produtos antes de confirmar</p>
             </div>
@@ -1504,7 +1499,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-2xl">
           <button onClick={() => setCurrentScreen("product-detail")} className="mb-8 text-muted-foreground hover:text-foreground flex items-center gap-2 font-medium"><ChevronRight className="w-5 h-5 rotate-180" /> Voltar ao Produto</button>
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="bg-gradient-to-r from-[#163E8F] to-[#2F5FD0] p-6 text-white"><h1 className="text-2xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Confirmar Reserva</h1></div>
+            <div className="bg-gradient-to-r from-[#1A3972] to-[#3F6CBF] p-6 text-white"><h1 className="text-2xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Confirmar Reserva</h1></div>
             <div className="p-8 space-y-8">
               <div>
                 <h2 className="font-semibold text-lg mb-4 flex items-center gap-2"><User className="w-5 h-5 text-primary" />Seus Dados</h2>
@@ -1564,12 +1559,12 @@ function ProductCard({ product }: { product: Product }) {
   const HomeScreen = () => (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <section className="pt-32 pb-20 bg-gradient-to-br from-[#EAF2FF] to-white">
+      <section className="pt-32 pb-20 bg-gradient-to-br from-[#EAF2FF] via-white to-[#edf7f6]">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight" style={{fontFamily:"Poppins,sans-serif"}}>Bazar Solidário<br /><span className="text-primary">Casa Azul</span></h1>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight" style={{fontFamily:"Poppins,sans-serif"}}>Bazar Solidário<br /><span className="text-primary">Casa Azul Felipe Augusto</span></h1>
                 <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">Renove seu guarda-roupa e transforme vidas. Cada compra contribui para apoiar crianças e famílias em situação de vulnerabilidade.</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -1585,9 +1580,9 @@ function ProductCard({ product }: { product: Product }) {
               )}
             </div>
             <div className="relative">
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl"><img src="https://images.unsplash.com/photo-1516013474378-d6498f0d1434?w=800&h=600&fit=crop" alt="Casa Azul" className="w-full h-full object-cover" /></div>
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-6 border border-border">
-                <div className="flex items-center gap-4"><div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center"><Heart className="w-7 h-7 text-primary fill-primary" /></div><div><div className="text-2xl font-bold text-primary">+500</div><div className="text-sm text-muted-foreground">Famílias Atendidas</div></div></div>
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl"><img src="https://storage.googleapis.com/casa-azul-2021.appspot.com/programs/2021%2F05%2Fbrincandoeeducando_1621520989499.jpg" alt="Casa Azul" className="w-full h-full object-cover" /></div>
+              <div className="absolute bottom-3 left-3 bg-white rounded-xl shadow-xl p-6 border border-border">
+                <div className="flex items-center gap-4"><div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center"><Heart className="w-7 h-7 text-primary fill-primary" /></div><div><div className="text-2xl font-bold text-primary">Desde 1989</div><div className="text-sm text-muted-foreground">Casa Azul Felipe Augusto</div></div></div>
               </div>
             </div>
           </div>
@@ -1597,10 +1592,10 @@ function ProductCard({ product }: { product: Product }) {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[{I:Users,v:"500+",l:"Famílias Atendidas",c:"text-primary",b:"bg-primary/10"},{I:Heart,v:"1.200+",l:"Crianças Beneficiadas",c:"text-secondary",b:"bg-secondary/10"},{I:Package,v:"3.500+",l:"Produtos Disponíveis",c:"text-primary",b:"bg-primary/10"},{I:Award,v:"15",l:"Anos de Atuação",c:"text-secondary",b:"bg-secondary/10"}].map((s,i)=>(
+            {[{I:Users,v:"1989",l:"Início da trajetória",c:"text-primary",b:"bg-primary/10"},{I:Heart,v:"DF",l:"Atuação institucional",c:"text-secondary",b:"bg-secondary/10"},{I:Package,v:String(allProducts.filter(p => productAvailability(p) === "disponivel").length),l:"Produtos disponíveis no bazar",c:"text-primary",b:"bg-primary/10"},{I:Award,v:"Solidariedade",l:"Faça parte desta história",c:"text-secondary",b:"bg-secondary/10"}].map((s,i)=>(
               <div key={i} className="text-center">
                 <div className={`w-16 h-16 ${s.b} rounded-2xl flex items-center justify-center mx-auto mb-4`}><s.I className={`w-8 h-8 ${s.c}`} /></div>
-                <div className={`text-4xl font-bold ${s.c}`} style={{fontFamily:"Poppins,sans-serif"}}>{s.v}</div>
+                <div className={`text-2xl md:text-3xl font-bold ${s.c}`} style={{fontFamily:"Poppins,sans-serif"}}>{s.v}</div>
                 <div className="text-muted-foreground font-medium mt-2">{s.l}</div>
               </div>
             ))}
@@ -1752,16 +1747,16 @@ function ProductCard({ product }: { product: Product }) {
   const AboutScreen = () => (
     <div className="min-h-screen bg-background"><Navbar />
       <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8">
-        <div className="text-center mb-16"><h1 className="text-4xl md:text-5xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Sobre a Casa Azul</h1><p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">Transformando vidas através da solidariedade há mais de 15 anos</p></div>
-        <div className="aspect-[21/9] rounded-2xl overflow-hidden mb-16 shadow-xl bg-primary/10"><img src="https://images.unsplash.com/photo-1649887221640-481c952df72e?w=1200&h=500&fit=crop" alt="Voluntários" className="w-full h-full object-cover" /></div>
+        <div className="text-center mb-16"><h1 className="text-4xl md:text-5xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Casa Azul Felipe Augusto</h1><p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">Desde 1989, promovendo oportunidades e inclusão social no Distrito Federal</p></div>
+        <div className="aspect-[21/9] rounded-2xl overflow-hidden mb-16 shadow-xl bg-primary/10"><img src="https://storage.googleapis.com/casa-azul-2021.appspot.com/programs/2021%2F05%2Fbrincandoeeducando_1621520989499.jpg" alt="Programa Brincando e Educando da Casa Azul" className="w-full h-full object-cover" /></div>
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="bg-white rounded-2xl border border-border p-8 md:p-12">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-3"><div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center"><Book className="w-6 h-6 text-primary" /></div>Nossa História</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">A Casa Azul nasceu em 2009 com o objetivo de acolher e apoiar crianças, adolescentes e famílias em situação de vulnerabilidade social.</p>
-            <p className="text-muted-foreground leading-relaxed">Nosso Bazar Solidário oferece produtos de qualidade a preços acessíveis, ao mesmo tempo em que gera recursos para manter nossos projetos sociais.</p>
+            <p className="text-muted-foreground leading-relaxed mb-4">A Casa Azul Felipe Augusto atua desde 1989. A instituição desenvolve ações voltadas à garantia de direitos e à inclusão social de crianças, adolescentes e famílias.</p>
+            <p className="text-muted-foreground leading-relaxed">Neste bazar, a solidariedade ganha espaço por meio da circulação de produtos. Conheça também os programas e as formas de apoio no site oficial da instituição.</p><a href="https://www.casazulfelipeaugusto.org.br/" target="_blank" rel="noopener noreferrer" className="inline-block mt-5 px-5 py-3 rounded-md bg-[#1F9B93] text-white font-semibold">Conheça nossos programas</a>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {[{t:"Missão",d:"Promover o desenvolvimento integral de crianças e famílias através de ações de acolhimento, educação e assistência social."},{t:"Visão",d:"Ser referência em assistência social, contribuindo para uma sociedade mais justa e solidária."},{t:"Valores",d:"Amor, respeito, solidariedade, transparência e compromisso com a transformação social."}].map((item,i)=>(
+            {[{t:"Brincando e Educando",d:"Atividades para crianças e adolescentes em situação de vulnerabilidade social."},{t:"De Olho no Futuro",d:"Oportunidades e formação para adolescentes e jovens."},{t:"Construindo Vidas",d:"Capacitação e oportunidades de geração de renda para mulheres."}].map((item,i)=>(
               <div key={i} className="bg-[#EAF2FF] rounded-xl p-8 border border-primary/20"><h3 className="text-xl font-bold mb-3">{item.t}</h3><p className="text-muted-foreground leading-relaxed">{item.d}</p></div>
             ))}
           </div>
@@ -1780,9 +1775,9 @@ function ProductCard({ product }: { product: Product }) {
           <div className="text-center mb-16"><h1 className="text-4xl md:text-5xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Entre em Contato</h1></div>
           <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
             <div className="bg-white rounded-2xl border border-border p-8">
-              <h2 className="text-2xl font-bold mb-6">Informações</h2>
+              <h2 className="text-2xl font-bold mb-6">Contato institucional</h2><p className="text-sm text-muted-foreground mb-6">Para retirada de produtos, combine o local e o horário com a equipe do bazar.</p>
               <div className="space-y-6">
-                {[{I:MapPin,t:"Endereço",d:"Rua da Esperança, 123\nCentro - São Paulo, SP"},{I:Phone,t:"Telefone",d:"(11) 98765-4321"},{I:MessageCircle,t:"WhatsApp",d:"(11) 98765-4321"},{I:Mail,t:"E-mail",d:"contato@casaazul.org"}].map((item,i)=>(
+                {[{I:MapPin,t:"Endereço",d:"QN 315, Conjunto F, Lotes 1/4\nSamambaia - DF"},{I:Phone,t:"Telefone",d:"(61) 3359-2095"},{I:Mail,t:"E-mail",d:"atendimento@casazul.org.br"}].map((item,i)=>(
                   <div key={i} className="flex items-start gap-4"><div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0"><item.I className="w-6 h-6 text-primary" /></div><div><h3 className="font-semibold mb-1">{item.t}</h3><p className="text-muted-foreground text-sm whitespace-pre-line">{item.d}</p></div></div>
                 ))}
               </div>
@@ -1797,7 +1792,7 @@ function ProductCard({ product }: { product: Product }) {
                     <div key={f.f}><label className="block text-sm font-medium mb-2">{f.l} *</label><input type={f.t} required value={form[f.f as keyof typeof form] as string} onChange={e => setForm({...form,[f.f]:e.target.value})} placeholder={f.p} className="w-full px-4 py-3 bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" /></div>
                   ))}
                   <div><label className="block text-sm font-medium mb-2">Mensagem *</label><textarea required rows={6} value={form.message} onChange={e => setForm({...form,message:e.target.value})} placeholder="Como podemos ajudar?" className="w-full px-4 py-3 bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" /></div>
-                  <button type="submit" className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2">Enviar Mensagem <ArrowRight className="w-5 h-5" /></button>
+                  <button type="submit" className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2">Abrir e-mail <ArrowRight className="w-5 h-5" /></button>
                 </form>
               )}
             </div>
@@ -3005,7 +3000,7 @@ const tabs: {
                       <XAxis dataKey="mes" tick={{fontSize:12}} />
                       <YAxis tick={{fontSize:12}} />
                       <Tooltip />
-                      <Bar dataKey="vendas" fill="#163E8F" radius={[4,4,0,0]} />
+                      <Bar dataKey="vendas" fill="#1A3972" radius={[4,4,0,0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -3314,7 +3309,7 @@ const tabs: {
     return (
       <div className="min-h-screen" style={{ background: "#0d1b2e", fontFamily: "Inter, sans-serif" }}>
         {/* Header */}
-        <div className="border-b border-white/10" style={{ background: "linear-gradient(135deg,#0f2a5a,#163E8F,#1a4aab)" }}>
+        <div className="border-b border-white/10" style={{ background: "linear-gradient(135deg,#0f2a5a,#1A3972,#1a4aab)" }}>
           <div className="max-w-screen-2xl mx-auto px-8 py-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
