@@ -1652,9 +1652,9 @@ function ProductCard({ product }: { product: Product }) {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Categorias</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[{n:"Feminino" as Category,I:Shirt,c:"bg-pink-100 text-pink-600"},{n:"Masculino" as Category,I:Shirt,c:"bg-blue-100 text-blue-600"},{n:"Infantil" as Category,I:Baby,c:"bg-purple-100 text-purple-600"},{n:"Calçados" as Category,I:Footprints,c:"bg-green-100 text-green-600"},{n:"Livros" as Category,I:Book,c:"bg-orange-100 text-orange-600"},{n:"Brinquedos" as Category,I:Gamepad2,c:"bg-red-100 text-red-600"},{n:"Acessórios" as Category,I:Watch,c:"bg-yellow-100 text-yellow-600"}].map((cat,i)=>(
+            {[{n:"Feminino" as Category,img:"https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80"},{n:"Masculino" as Category,img:"https://images.unsplash.com/photo-1516826957135-700d?auto=format&fit=crop&w=600&q=80"},{n:"Infantil" as Category,img:"https://images.unsplash.com/photo-1503919545889-aef636e10ad4?auto=format&fit=crop&w=600&q=80"},{n:"Calçados" as Category,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80"},{n:"Livros" as Category,img:"https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=600&q=80"},{n:"Brinquedos" as Category,img:"https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&w=600&q=80"},{n:"Acessórios" as Category,img:"https://images.unsplash.com/photo-1523779917675-b6ed3a42a561?auto=format&fit=crop&w=600&q=80"}].map((cat,i)=>(
               <button key={i} onClick={() => { setSelectedCategory(cat.n); setCurrentScreen("catalog"); }} className="bg-white border-2 border-border rounded-2xl p-8 hover:border-primary hover:shadow-lg group text-center transition-all">
-                <div className={`w-16 h-16 ${cat.c} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><cat.I className="w-8 h-8" /></div>
+                <div className="w-full h-32 rounded-2xl overflow-hidden mb-4"><img src={cat.img} alt={`Categoria ${cat.n}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /></div>
                 <h3 className="font-semibold text-lg">{cat.n}</h3>
               </button>
             ))}
@@ -3575,3 +3575,4 @@ const tabs: {
     </div>
   );
 }
+
