@@ -2344,12 +2344,67 @@ const deleteProd = async (id: number) => {
       {name:"Vendido",value:allProducts.filter(p=>p.status==="vendido").length,color:"#6b7280"},
       {name:"Indisponível",value:allProducts.filter(p=>p.status==="indisponivel").length,color:"#d1d5db"},
     ].filter(d=>d.value>0);
-    const catData = CATEGORIES.map(cat=>({
+const catData = CATEGORIES.map(cat=>({
       name:cat.length>8?cat.slice(0,7)+".":cat,
       Disponível:allProducts.filter(p=>p.categoria===cat&&p.status==="disponivel").length,
       Reservado:allProducts.filter(p=>p.categoria===cat&&p.status==="reservado").length,
       Vendido:allProducts.filter(p=>p.categoria===cat&&p.status==="vendido").length,
     }));
+
+    const gerarRelatorioPdf = () => {
+      const semAcentos = (valor: string) => valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const linhas = [
+        "BAZAR SOLIDARIO CASA AZUL",
+        "Relatorio gerado em " + new Date().toLocaleDateString("pt-BR"),
+        "",
+        `RESUMO: ${allProducts.length} produtos | ${localOrders.length} vendas | ${localAdminUsers.length} usuarios`,
+        `Produtos disponiveis: ${allProducts.filter(p => productAvailability(p) === "disponivel").length}`,
+        `Produtos reservados: ${allProducts.filter(p => productAvailability(p) === "reservado").length}`,
+        `Produtos indisponiveis: ${allProducts.filter(p => productAvailability(p) === "indisponivel").length}`,
+        "",
+        "PRODUTOS",
+        ...allProducts.map(p => `- ${p.nome} | ${p.categoria} | R$ ${p.preco.toFixed(2)} | estoque: ${p.quantidade ?? 0} | ${productAvailability(p)}`),
+        "",
+        "VENDAS E RESERVAS",
+        ...localOrders.slice(0, 30).map(v => `- #${v.id} | ${v.cliente || "Cliente"} | ${v.status} | R$ ${v.total.toFixed(2)} | ${v.date}`),
+        "",
+        "USUARIOS CADASTRADOS",
+        ...localAdminUsers.slice(0, 30).map(u => `- ${u.name} | ${u.email} | ${u.status}`),
+      ].map(semAcentos);
+      const paginas: string[][] = [];
+      for (let i = 0; i < linhas.length; i += 34) paginas.push(linhas.slice(i, i + 34));
+      const objetos: string[] = [];
+      const paginaNums: number[] = [];
+      const conteudoNums: number[] = [];
+      let proximo = 3;
+      paginas.forEach(() => { paginaNums.push(proximo++); conteudoNums.push(proximo++); });
+      const fonteNum = proximo;
+      objetos[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+      objetos[2] = `<< /Type /Pages /Kids [${paginaNums.map(n => `${n} 0 R`).join(" ")}] /Count ${paginaNums.length} >>`;
+      const escapar = (linha: string) => linha.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+      paginas.forEach((pagina, indice) => {
+        const stream = ["BT", "/F1 12 Tf", "50 800 Td", ...pagina.map((linha, i) => `${i ? "0 -22 Td\\n" : ""}(${escapar(linha)}) Tj`), "ET"].join("\n");
+        objetos[paginaNums[indice]] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fonteNum} 0 R >> >> /Contents ${conteudoNums[indice]} 0 R >>`;
+        objetos[conteudoNums[indice]] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+      });
+      objetos[fonteNum] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      for (let i = 1; i < objetos.length; i++) { offsets[i] = pdf.length; pdf += `${i} 0 obj\n${objetos[i]}\nendobj\n`; }
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objetos.length}\n0000000000 65535 f \n`;
+      for (let i = 1; i < objetos.length; i++) pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+      pdf += `trailer\n<< /Size ${objetos.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-casa-azul-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Relatorio PDF gerado com sucesso!");
+    };
 
 const tabs: {
   id: AdminTabType;
@@ -2394,7 +2449,12 @@ const tabs: {
           {/* DASHBOARD */}
           {adminTab==="dashboard" && (
             <div>
-              <h1 className="text-3xl font-bold mb-8" style={{fontFamily:"Poppins,sans-serif"}}>Dashboard</h1>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5 lg:mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Dashboard</h1>
+                <button onClick={gerarRelatorioPdf} className="px-3 lg:px-5 py-2 lg:py-2.5 bg-primary text-white rounded-lg lg:rounded-xl hover:bg-primary/90 flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-medium whitespace-nowrap">
+                  <Receipt className="w-4 h-4 lg:w-5 lg:h-5" /> Gerar relatório PDF
+                </button>
+              </div>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {[
                   {I:Package,v:allProducts.length,l:"Total de Produtos",c:"text-primary",b:"bg-primary/10"},
