@@ -2353,7 +2353,7 @@ const catData = CATEGORIES.map(cat=>({
 
     const gerarRelatorioPdf = () => {
       const semAcentos = (valor: string) => valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const linhas = [
+      const linhasBase = [
         "BAZAR SOLIDARIO CASA AZUL",
         "Relatorio gerado em " + new Date().toLocaleDateString("pt-BR"),
         "",
@@ -2371,6 +2371,12 @@ const catData = CATEGORIES.map(cat=>({
         "USUARIOS CADASTRADOS",
         ...localAdminUsers.slice(0, 30).map(u => `- ${u.name} | ${u.email} | ${u.status}`),
       ].map(semAcentos);
+      const linhas = linhasBase.flatMap(linha => {
+        if (!linha) return [""];
+        const partes: string[] = [];
+        for (let inicio = 0; inicio < linha.length; inicio += 88) partes.push(linha.slice(inicio, inicio + 88));
+        return partes;
+      });
       const paginas: string[][] = [];
       for (let i = 0; i < linhas.length; i += 34) paginas.push(linhas.slice(i, i + 34));
       const objetos: string[] = [];
@@ -2383,7 +2389,7 @@ const catData = CATEGORIES.map(cat=>({
       objetos[2] = `<< /Type /Pages /Kids [${paginaNums.map(n => `${n} 0 R`).join(" ")}] /Count ${paginaNums.length} >>`;
       const escapar = (linha: string) => linha.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
       paginas.forEach((pagina, indice) => {
-        const stream = ["BT", "/F1 12 Tf", "50 800 Td", ...pagina.map((linha, i) => `${i ? "0 -22 Td\\n" : ""}(${escapar(linha)}) Tj`), "ET"].join("\n");
+        const stream = ["BT", "/F1 12 Tf", "50 800 Td", ...pagina.map((linha, i) => `${i ? "0 -22 Td\n" : ""}(${escapar(linha)}) Tj`), "ET"].join("\n");
         objetos[paginaNums[indice]] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fonteNum} 0 R >> >> /Contents ${conteudoNums[indice]} 0 R >>`;
         objetos[conteudoNums[indice]] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
       });
