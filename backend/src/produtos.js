@@ -4,6 +4,21 @@ const autenticarToken = require("./auth");
 const adminOuVendedor = require("./adminOuVendedor");
 
 const router = express.Router();
+router.param("id", (req, res, next, id) => {
+  if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) return res.status(400).json({ erro: "Produto inválido." });
+  next();
+});
+function validarProduto(req, res, next) {
+  const { nome, preco, quantidade, status } = req.body || {};
+  if (typeof nome !== "string" || !nome.trim() || nome.length > 150 ||
+      typeof preco !== "number" || !Number.isFinite(preco) || preco < 0 || preco > 99999999.99 ||
+      (quantidade !== undefined && (!Number.isInteger(quantidade) || quantidade < 0 || quantidade > 2147483647)) ||
+      (req.method === "POST" && quantidade === undefined) ||
+      !["disponivel", "reservado", "vendido", "indisponivel"].includes(status)) {
+    return res.status(400).json({ erro: "Informe nome, preço, quantidade e status válidos." });
+  }
+  next();
+}
 
 // LISTAR TODOS OS PRODUTOS
 router.get("/", async (req, res) => {
@@ -23,7 +38,7 @@ router.get("/", async (req, res) => {
 });
 
 // CADASTRAR NOVO PRODUTO
-router.post("/", autenticarToken, adminOuVendedor, async (req, res) => {
+router.post("/", autenticarToken, adminOuVendedor, validarProduto, async (req, res) => {
   try {
     const {
       nome,
@@ -65,7 +80,7 @@ router.post("/", autenticarToken, adminOuVendedor, async (req, res) => {
 });
 
 // EDITAR PRODUTO
-router.put("/:id", autenticarToken, adminOuVendedor, async (req, res) => {
+router.put("/:id", autenticarToken, adminOuVendedor, validarProduto, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -77,7 +92,7 @@ router.put("/:id", autenticarToken, adminOuVendedor, async (req, res) => {
            descricao = $2,
            categoria = $3,
            preco = $4,
-           quantidade = $5,
+           quantidade = COALESCE($5, quantidade),
            status = $6,
            condicao = $7,
            imagem = $8
@@ -137,6 +152,7 @@ router.delete("/:id", autenticarToken, adminOuVendedor, async (req, res) => {  t
     });
 
   } catch (error) {
+    if (error.code === "23503") return res.status(409).json({ erro: "Este produto possui vendas vinculadas e não pode ser excluído." });
     console.error(error);
 
     res.status(500).json({

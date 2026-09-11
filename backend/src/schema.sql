@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
+    telefone VARCHAR(30),
     tipo VARCHAR(30) DEFAULT 'usuario',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS vendas (
     valor_total NUMERIC(10,2) NOT NULL,
     forma_pagamento VARCHAR(50),
     data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    origem VARCHAR(10) NOT NULL DEFAULT 'compra' CHECK (origem IN ('compra', 'reserva')),
     status VARCHAR(30) DEFAULT 'Pendente'
 );
 

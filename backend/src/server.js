@@ -14,7 +14,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173"
 }));
+app.disable("x-powered-by");
 app.use(express.json());
+app.use((req, res, next) => {
+  if (["POST", "PUT", "PATCH"].includes(req.method) && (!req.body || typeof req.body !== "object" || Array.isArray(req.body))) {
+    return res.status(400).json({ erro: "Envie um objeto JSON válido." });
+  }
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
 app.use("/api/configuracoes", configuracoesRouter);
 
 app.use("/api/produtos", produtosRoutes);
@@ -45,13 +53,21 @@ app.get("/api/db-test", async (req, res) => {
 
     res.status(500).json({
       status: "erro",
-      message: "Erro ao conectar com PostgreSQL",
-      error: error.message
+      message: "Erro ao conectar com PostgreSQL"
     });
   }
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.type === "entity.too.large" ? 413 : error.type === "entity.parse.failed" ? 400 : 500;
+  res.status(status).json({ erro: status === 413 ? "Dados enviados excedem o limite permitido." : status === 400 ? "JSON inválido." : "Erro interno do servidor." });
 });
+
+// Iniciar servidor
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
+module.exports = app;

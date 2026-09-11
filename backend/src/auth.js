@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const pool = require("./db");
 
-function autenticarToken(req, res, next) {
+async function autenticarToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -25,7 +26,10 @@ function autenticarToken(req, res, next) {
       process.env.JWT_SECRET
     );
 
-    req.usuario = usuario;
+    if (!Number.isSafeInteger(Number(usuario.id)) || Number(usuario.id) <= 0) return res.status(401).json({ erro: "Sessão inválida." });
+    const atual = await pool.query("SELECT id, email, tipo FROM usuarios WHERE id = $1", [usuario.id]);
+    if (!atual.rows.length) return res.status(401).json({ erro: "Sessão inválida." });
+    req.usuario = atual.rows[0];
     next();
 
   } catch (error) {

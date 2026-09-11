@@ -31,13 +31,18 @@ type Screen =
 type ProductStatus = "disponivel" | "reservado" | "vendido" | "indisponivel";
 type Category = "Feminino" | "Masculino" | "Infantil" | "Calçados" | "Livros" | "Brinquedos" | "Acessórios";
 type AdminTabType = "dashboard" | "users" | "products" | "categories" | "reservations" | "reports" | "whatsapp";
-type ReservationStatus = "Aguardando Confirmação" | "Confirmada" | "Finalizada" | "Cancelada";
+type ReservationStatus = "Pendente" | "Reservada" | "Aguardando Confirmação" | "Confirmada" | "Finalizada" | "Cancelada";
 type OrderStatus = "Pendente" | "Reservada" | "Confirmada" | "Finalizada" | "Cancelada";
 
 interface Product {
   id: number; nome: string; categoria: Category;
   descricao: string; condicao: string; preco: number;
-  status: ProductStatus; imagem: string; imagens?: string[];}
+  status: ProductStatus; quantidade?: number; imagem: string; imagens?: string[];}
+
+function productAvailability(product: Product): ProductStatus {
+  return product.status === "disponivel" && product.quantidade != null && product.quantidade <= 0
+    ? "indisponivel" : product.status;
+}
 interface CartItem { product: Product; quantity: number; }
 interface Order {
   id: number;
@@ -48,6 +53,7 @@ interface Order {
   cliente?: string;
   usuarioId?: number;
   formaPagamento?: string;
+  origem?: "compra" | "reserva";
 }
 interface UserType {
   id: number; name: string; birthDate: string; email: string;
@@ -153,11 +159,6 @@ const sampleProducts: Product[] = [
 ];
 const mockUser: UserType = { id:1, name:"Maria Silva", birthDate:"15/03/1990", email:"maria@email.com", phone:"(11) 98765-4321", address:"Rua das Flores, 456", city:"São Paulo", state:"SP", cep:"01234-567" };
 
-const initReservations: UserReservation[] = [
-  { id:1, product:sampleProducts[1], date:"20/01/2024", status:"Confirmada" },
-  { id:2, product:sampleProducts[3], date:"15/01/2024", status:"Finalizada" },
-];
-
 const initOrders: Order[] = [
   { id:1, items:[{product:sampleProducts[0],quantity:1},{product:sampleProducts[4],quantity:1}], date:"10/01/2024", total:50, status:"Confirmada" },
   { id:2, items:[{product:sampleProducts[6],quantity:1}], date:"05/01/2024", total:40, status:"Finalizada" },
@@ -178,23 +179,17 @@ export default function App() {
   const [loginReturnTo, setLoginReturnTo] = useState<Screen>("home");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
-useEffect(() => {
-  fetch(`${API_URL}/api/produtos`)
-    .then(res => res.json())
-    .then(dados => {
-      const produtosConvertidos = dados.map((p: any) => ({
-        ...p,
-        preco: Number(p.preco),
-        condicao: p.condicao || "",
-        imagem: p.imagem || ""
-      }));
-
-      setAllProducts(produtosConvertidos);
-    })
-    .catch(error => {
-      console.error("Erro ao carregar produtos:", error);
-    });
-}, []);
+const refreshProducts = async () => {
+  try {
+    const response = await fetch(API_URL + "/api/produtos");
+    if (!response.ok) throw new Error("Falha ao carregar produtos");
+    const dados = await response.json();
+    const products = dados.map((p: any) => ({ ...p, quantidade: Number(p.quantidade ?? 0), preco: Number(p.preco), condicao: p.condicao || "", imagem: p.imagem || "" }));
+    setAllProducts(products);
+    setSelectedProduct(previous => previous ? products.find((p: Product) => p.id === previous.id) || previous : null);
+  } catch (error) { console.error("Erro ao carregar produtos:", error); }
+};
+useEffect(() => { void refreshProducts(); }, []);
 
 useEffect(() => {
   fetch(`${API_URL}/api/configuracoes`)
@@ -217,8 +212,109 @@ useEffect(() => {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminRole, setAdminRole] = useState<"admin" | "vendedor" | null>(null);
-  const [userReservations, setUserReservations] = useState<UserReservation[]>(initReservations);
+  const [userReservations, setUserReservations] = useState<UserReservation[]>([]);
+  const [reservationLoading, setReservationLoading] = useState(true);
+  const [reservationError, setReservationError] = useState("");
+  const [reservationRefresh, setReservationRefresh] = useState(0);
+  const [reservationSaving, setReservationSaving] = useState(false);
+  const reservationSavingRef = useRef(false);
+  const [lastReservationId, setLastReservationId] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser || currentScreen !== "my-reservations") return;
+    const controller = new AbortController();
+    setReservationLoading(true);
+    setReservationError("");
+    const carregar = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Entre novamente para consultar suas reservas.");
+        const resposta = await fetch(API_URL + "/api/vendas/minhas/reservas", {
+          headers: { Authorization: "Bearer " + token }, signal: controller.signal
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.erro || "Não foi possível carregar as reservas.");
+        const reservas: UserReservation[] = dados.map((v: any) => {
+          const item = v.itens[0];
+          return {
+            id: v.id, status: v.status, date: new Date(v.data_venda).toLocaleDateString("pt-BR"),
+            product: { id: item.produto_id, nome: item.nome, categoria: item.categoria,
+              descricao: item.descricao || "", condicao: item.condicao || "", preco: Number(item.preco_unitario),
+              status: item.status, imagem: item.imagem || "" }
+          };
+        });
+        if (!controller.signal.aborted) setUserReservations(reservas);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setUserReservations([]);
+          setReservationError(error instanceof Error ? error.message : "Não foi possível carregar as reservas.");
+        }
+      } finally { if (!controller.signal.aborted) setReservationLoading(false); }
+    };
+    void carregar();
+    return () => controller.abort();
+  }, [isLoggedIn, currentUser?.id, currentScreen, reservationRefresh]);
+
   const [orders, setOrders] = useState<Order[]>([]);
+
+  const [purchaseHistory, setPurchaseHistory] = useState<Order[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [historyRefresh, setHistoryRefresh] = useState(0);
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser || currentScreen !== "purchase-history") return;
+    const controller = new AbortController();
+    setHistoryLoading(true);
+    setHistoryError("");
+    const carregarHistorico = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Entre novamente para consultar suas compras.");
+        const resposta = await fetch(API_URL + "/api/vendas/minhas", {
+          headers: { Authorization: "Bearer " + token }, signal: controller.signal
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.erro || "Não foi possível carregar suas compras.");
+              const vendasConvertidas: Order[] = dados.map((v: any) => ({
+        id: v.id,
+        cliente: v.cliente || "Cliente",
+        usuarioId: v.usuario_id,
+        origem: v.origem,
+        formaPagamento: v.forma_pagamento || "",
+        date: v.data_venda
+          ? new Date(v.data_venda).toLocaleDateString("pt-BR")
+          : "-",
+        total: Number(v.valor_total),
+        status: v.status as OrderStatus,
+        items: (v.itens || []).map((item: any) => ({
+          quantity: Number(item.quantidade),
+          product: {
+            id: item.produto_id,
+            nome: item.nome,
+            descricao: item.descricao || "",
+            categoria: item.categoria,
+            condicao: item.condicao || "",
+            preco: Number(item.preco_unitario),
+            status: item.status,
+            imagem: item.imagem || ""
+          }
+        }))
+      }));
+
+
+        if (!controller.signal.aborted) setPurchaseHistory(vendasConvertidas);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setPurchaseHistory([]); setUserReservations([]); setReservationLoading(true);
+          setHistoryError(error instanceof Error ? error.message : "Não foi possível carregar suas compras.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setHistoryLoading(false);
+      }
+    };
+    void carregarHistorico();
+    return () => controller.abort();
+  }, [isLoggedIn, currentUser?.id, currentScreen, historyRefresh]);
+
 
 
 useEffect(() => {
@@ -247,6 +343,7 @@ useEffect(() => {
         id: v.id,
         cliente: v.cliente || "Cliente",
         usuarioId: v.usuario_id,
+        origem: v.origem,
         formaPagamento: v.forma_pagamento || "",
         date: v.data_venda
           ? new Date(v.data_venda).toLocaleDateString("pt-BR")
@@ -280,6 +377,8 @@ useEffect(() => {
 
 
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const submittingOrderRef = useRef(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [adminTab, setAdminTab] = useState<AdminTabType>("dashboard");
@@ -304,7 +403,7 @@ const filteredProducts = allProducts.filter(p => {
 
   const matchS =
     statusFilter === "all" ||
-    p.status === statusFilter;
+    productAvailability(p) === statusFilter;
 
   return matchCat && matchQ && matchP && matchS;
 });
@@ -338,12 +437,16 @@ const handleLogin = async (email: string, password: string) => {
 
     localStorage.setItem("token", dados.token);
 
+    setPurchaseHistory([]); setUserReservations([]); setReservationLoading(true);
+    setHistoryLoading(true);
+    setIsAdminLoggedIn(false);
+    setAdminRole(null);
     setCurrentUser({
       id: dados.usuario.id,
       name: dados.usuario.nome,
       email: dados.usuario.email,
       birthDate: "",
-      phone: "",
+      phone: dados.usuario.telefone || "",
       address: "",
       city: "",
       state: "",
@@ -367,7 +470,7 @@ const handleLogin = async (email: string, password: string) => {
 };
 
 
-  const handleLogout = () => { setIsLoggedIn(false); setCurrentUser(null); setUserMenuOpen(false); setCurrentScreen("home"); };
+  const handleLogout = () => { localStorage.removeItem("token"); setPurchaseHistory([]); setUserReservations([]); setReservationLoading(true); setOrders([]); setIsLoggedIn(false); setCurrentUser(null); setUserMenuOpen(false); setCurrentScreen("home"); };
 
 const handleAdminLogin = async (email: string, password: string) => {
   try {
@@ -394,6 +497,9 @@ const handleAdminLogin = async (email: string, password: string) => {
 localStorage.setItem("token", dados.token);
 localStorage.setItem("adminRole", dados.usuario.tipo);
 
+setCurrentUser(null);
+setIsLoggedIn(false);
+setPurchaseHistory([]); setUserReservations([]); setReservationLoading(true);
 setAdminRole(dados.usuario.tipo);
 setIsAdminLoggedIn(true);
 setAdminTab("dashboard");
@@ -415,7 +521,10 @@ const handleAdminLogout = () => {
   setCurrentScreen("home");
 };
   const addToCart = (product: Product) => {
-  if (product.status !== "disponivel") return;
+  if (productAvailability(product) !== "disponivel") {
+    toast.error("Produto indisponível ou sem estoque.");
+    return;
+  }
 
   setCart(prev => {
     if (prev.find(i => i.product.id === product.id)) {
@@ -436,6 +545,10 @@ const handleAdminLogout = () => {
   const updateQty = (id: number, delta: number) => setCart(p => p.map(i => i.product.id === id ? {...i, quantity: Math.max(1, Math.min(5, i.quantity+delta))} : i));
 
   const handleReserveClick = () => {
+    if (!selectedProduct || productAvailability(selectedProduct) !== "disponivel") {
+      toast.error("Produto indisponível ou sem estoque.");
+      return;
+    }
     if (!isLoggedIn) { setLoginReturnTo("confirm-reservation"); setCurrentScreen("login"); }
     else setCurrentScreen("confirm-reservation");
   };
@@ -445,17 +558,82 @@ const handleAdminLogout = () => {
     else setCurrentScreen("checkout");
   };
 
-  const handleConfirmReservation = () => {
-    if (!selectedProduct || !currentUser) return;
-    setUserReservations(p => [{id:Date.now(), product:selectedProduct, date:new Date().toLocaleDateString("pt-BR"), status:"Aguardando Confirmação"}, ...p]);
-    setCurrentScreen("confirmation");
+  const handleConfirmReservation = async () => {
+    if (!selectedProduct || !currentUser || reservationSavingRef.current) return;
+    const token = localStorage.getItem("token");
+    if (!token) { toast.error("Entre novamente para reservar."); return; }
+    reservationSavingRef.current = true;
+    setReservationSaving(true);
+    try {
+      const resposta = await fetch(API_URL + "/api/vendas/reservas", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ itens: [{ produto_id: selectedProduct.id, quantidade: 1 }] })
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) { toast.error(dados.erro || "Não foi possível reservar."); void refreshProducts(); return; }
+      void refreshProducts();
+      setLastReservationId(dados.venda.id);
+      setCurrentScreen("confirmation");
+    } catch {
+      toast.error("Não foi possível confirmar o resultado. Consulte Minhas Reservas antes de tentar novamente.");
+    } finally { reservationSavingRef.current = false; setReservationSaving(false); }
   };
 
-  const handleConfirmOrder = () => {
-    if (!currentUser || cart.length === 0) return;
-    setOrders(p => [{id:Date.now(), items:[...cart], date:new Date().toLocaleDateString("pt-BR"), total:cartTotal, status:"Pendente"}, ...p]);
-    setCart([]);
-    setCurrentScreen("order-confirmation");
+  const handleConfirmOrder = async () => {
+    if (!currentUser || cart.length === 0 || submittingOrderRef.current) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Entre novamente na sua conta para confirmar a compra.");
+      return;
+    }
+
+    submittingOrderRef.current = true;
+    setIsSubmittingOrder(true);
+    const itensPedido = cart.map(item => ({ ...item }));
+    try {
+      const resposta = await fetch(`${API_URL}/api/vendas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          usuario_id: currentUser.id,
+          forma_pagamento: null,
+          itens: itensPedido.map(item => ({
+            produto_id: item.product.id,
+            quantidade: item.quantity
+          }))
+        })
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        toast.error(dados.erro || "Não foi possível registrar a compra.");
+        return;
+      }
+
+      void refreshProducts();
+      const venda = dados.venda;
+      setOrders(prev => [{
+        id: venda.id,
+        items: itensPedido,
+        date: new Date(venda.data_venda).toLocaleDateString("pt-BR"),
+        total: Number(venda.valor_total),
+        status: venda.status,
+        usuarioId: venda.usuario_id,
+        cliente: currentUser.name,
+        formaPagamento: venda.forma_pagamento || ""
+      }, ...prev]);
+      setCart([]);
+      setCurrentScreen("order-confirmation");
+      toast.success(`Pedido nº ${venda.id} registrado com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao registrar compra:", error);
+      toast.error("Não foi possível confirmar o resultado da compra. Confira seus pedidos com a Casa Azul antes de tentar novamente.");
+    } finally {
+      submittingOrderRef.current = false;
+      setIsSubmittingOrder(false);
+    }
   };
 
   // ─── Shared Components ─────────────────────────────────────────────────────
@@ -613,9 +791,9 @@ const handleAdminLogout = () => {
   const StatusBadge = ({ status }: { status: ProductStatus }) => {
     const m: Record<ProductStatus,{cls:string;label:string}> = {
       disponivel:{cls:"bg-green-100 text-green-700 border-green-200",label:"Disponível"},
-      reserved:{cls:"bg-yellow-100 text-yellow-700 border-yellow-200",label:"Reservado"},
-      sold:{cls:"bg-gray-200 text-gray-600 border-gray-300",label:"Vendido"},
-      unavailable:{cls:"bg-gray-100 text-gray-500 border-gray-200",label:"Indisponível"},
+      reservado:{cls:"bg-yellow-100 text-yellow-700 border-yellow-200",label:"Reservado"},
+      vendido:{cls:"bg-gray-200 text-gray-600 border-gray-300",label:"Vendido"},
+      indisponivel:{cls:"bg-gray-100 text-gray-500 border-gray-200",label:"Indisponível"},
     };
     const {cls,label} = m[status];
     return <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${cls}`}>{label}</span>;
@@ -641,14 +819,19 @@ function ProductCard({ product }: { product: Product }) {
     }
   };
 
-  const canAdd = product.status === "disponivel";
+  const canAdd = productAvailability(product) === "disponivel";
+  const openDetails = () => {
+    setSelectedProduct(product);
+    setCurrentScreen("product-detail");
+  };
 
   return (
-    <div className="group bg-card rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all">
+    <article className="group bg-card rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all">
       <div className="aspect-[4/5] overflow-hidden bg-muted">
         <img
           src={product.imagem}
           alt={product.nome}
+          onError={(event) => { event.currentTarget.style.display = "none"; }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
@@ -666,17 +849,28 @@ function ProductCard({ product }: { product: Product }) {
           R$ {product.preco.toFixed(2)}
         </span>
 
-        <StatusBadge status={product.status} />
+        <StatusBadge status={productAvailability(product)} />
 
         <button
+          type="button"
+          onClick={openDetails}
+          translate="no"
+          className="mt-4 w-full px-3 py-3 rounded-xl font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+        >
+          <span>Ver detalhes</span>
+        </button>
+
+        <button
+          type="button"
+          translate="no"
           disabled={!canAdd}
           onClick={() => addToCart(product)}
-          className="mt-4 w-full py-3 rounded-xl font-semibold bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 w-full px-3 py-3 rounded-xl font-semibold bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {canAdd ? "Adicionar ao carrinho" : "Produto indisponível"}
+          <span>{canAdd ? "Adicionar ao carrinho" : "Produto indisponível"}</span>
         </button>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -803,7 +997,7 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   const RegisterScreen = () => {
-    const [form, setForm] = useState({name:"",birthDate:"",email:"",phone:"",address:"",city:"",state:"",cep:"",password:"",confirmPassword:"",acceptTerms:false});
+    const [form, setForm] = useState({name:"",email:"",phone:"",password:"",confirmPassword:"",acceptTerms:false});
     const [showP, setShowP] = useState(false);
     const [showC, setShowC] = useState(false);
     const [errors, setErrors] = useState<Record<string,string>>({});
@@ -812,15 +1006,43 @@ function ProductCard({ product }: { product: Product }) {
 
     const validate = () => {
       const e: Record<string,string> = {};
-      if (!form.name) e.name = "Nome é obrigatório";
-      if (!form.email) e.email = "E-mail é obrigatório";
+      if (!form.name.trim()) e.name = "Nome é obrigatório";
+      if (!form.email.trim()) e.email = "E-mail é obrigatório";
       else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "E-mail inválido";
-      if (!form.phone) e.phone = "Telefone é obrigatório";
+
+      if (!/^[+\d\s().-]+$/.test(form.phone) || form.phone.replace(/\D/g, "").length < 10 || form.phone.replace(/\D/g, "").length > 15) e.phone = "Informe telefone com DDD (10 a 15 dígitos).";
       if (!form.password) e.password = "Senha é obrigatória";
       else if (form.password.length < 6) e.password = "Mínimo 6 caracteres";
       if (form.password !== form.confirmPassword) e.confirmPassword = "Senhas não coincidem";
       if (!form.acceptTerms) e.acceptTerms = "Aceite os termos";
       setErrors(e); return Object.keys(e).length === 0;
+    };
+
+    const [saving, setSaving] = useState(false);
+    const savingRef = useRef(false);
+    const submitRegistration = async () => {
+      if (savingRef.current || !validate()) return;
+      savingRef.current = true;
+      setSaving(true);
+      try {
+        const response = await fetch(`${API_URL}/api/usuarios`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome: form.name.trim(), email: form.email.trim(), senha: form.password, telefone: form.phone.trim() })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          if (response.status === 409) setErrors(prev => ({ ...prev, email: data.erro }));
+          toast.error(data.erro || "Não foi possível criar sua conta.");
+          return;
+        }
+        setDone(true);
+      } catch {
+        toast.error("Não foi possível confirmar o cadastro. Tente entrar com seu e-mail antes de cadastrar novamente.");
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
     };
 
     if (done) return (
@@ -846,22 +1068,16 @@ function ProductCard({ product }: { product: Product }) {
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <h1 className="text-2xl font-bold mb-1" style={{fontFamily:"Poppins,sans-serif"}}>Criar conta</h1>
             <p className="text-muted-foreground text-sm mb-8">Preencha seus dados para se cadastrar</p>
-            <form onSubmit={(e) => { e.preventDefault(); if (validate()) setDone(true); }} className="space-y-5">
+            <form onSubmit={(e) => { e.preventDefault(); void submitRegistration(); }} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium mb-2">Nome Completo *</label>
                 <input type="text" value={form.name} onChange={e => set("name",e.target.value)} placeholder="Seu nome completo" className={`w-full px-4 py-3 bg-muted rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 ${errors.name?"border-destructive":"border-border"}`} />
                 {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Data de Nascimento</label>
-                  <input type="date" value={form.birthDate} onChange={e => set("birthDate",e.target.value)} className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Telefone / WhatsApp *</label>
-                  <input type="tel" value={form.phone} onChange={e => set("phone",e.target.value)} placeholder="(11) 98765-4321" className={`w-full px-4 py-3 bg-muted rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 ${errors.phone?"border-destructive":"border-border"}`} />
-                  {errors.phone && <p className="text-destructive text-xs mt-1">{errors.phone}</p>}
-                </div>
+              <div>
+                <label htmlFor="register-phone" className="block text-sm font-medium mb-2">Telefone / WhatsApp *</label>
+                <input id="register-phone" type="tel" autoComplete="tel" required maxLength={30} value={form.phone} onChange={e => set("phone",e.target.value)} placeholder="(11) 99999-9999" aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? "register-phone-error" : undefined} className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                {errors.phone && <p id="register-phone-error" className="text-destructive text-xs mt-1">{errors.phone}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">E-mail *</label>
@@ -869,27 +1085,6 @@ function ProductCard({ product }: { product: Product }) {
                   <input type="email" value={form.email} onChange={e => set("email",e.target.value)} placeholder="seu@email.com" className={`w-full pl-11 pr-4 py-3 bg-muted rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 ${errors.email?"border-destructive":"border-border"}`} />
                 </div>
                 {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Endereço</label>
-                <input type="text" value={form.address} onChange={e => set("address",e.target.value)} placeholder="Rua, número, complemento" className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-2">Cidade</label>
-                  <input type="text" value={form.city} onChange={e => set("city",e.target.value)} placeholder="São Paulo" className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">UF</label>
-                  <select value={form.state} onChange={e => set("state",e.target.value)} className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    <option value="">UF</option>
-                    {STATES.map(uf => <option key={uf}>{uf}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CEP</label>
-                  <input type="text" value={form.cep} onChange={e => set("cep",e.target.value)} placeholder="00000-000" className="w-full px-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -914,7 +1109,7 @@ function ProductCard({ product }: { product: Product }) {
                 <span className="text-sm text-muted-foreground">Li e concordo com os <button type="button" className="text-primary hover:underline font-medium">Termos de Uso</button> e <button type="button" className="text-primary hover:underline font-medium">Política de Privacidade</button></span>
               </label>
               {errors.acceptTerms && <p className="text-destructive text-xs">{errors.acceptTerms}</p>}
-              <button type="submit" className="w-full py-3.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg">Criar Conta</button>
+              <button type="submit" disabled={saving} className="disabled:opacity-60 disabled:cursor-wait w-full py-3.5 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold shadow-lg">{saving ? "Criando conta..." : "Criar Conta"}</button>
             </form>
             <div className="mt-5 text-center"><span className="text-muted-foreground text-sm">Já possui conta? </span><button onClick={() => setCurrentScreen("login")} className="text-primary font-semibold text-sm hover:underline">Entrar</button></div>
           </div>
@@ -994,6 +1189,8 @@ function ProductCard({ product }: { product: Product }) {
   const MyReservationsScreen = () => {
     if (!currentUser) return <LoginScreen />;
     const statusCls: Record<string,string> = {
+      "Reservada":"bg-yellow-100 text-yellow-700 border-yellow-200",
+      "Pendente":"bg-yellow-100 text-yellow-700 border-yellow-200",
       "Aguardando Confirmação":"bg-yellow-100 text-yellow-700 border-yellow-200",
       "Confirmada":"bg-blue-100 text-blue-700 border-blue-200",
       "Finalizada":"bg-green-100 text-green-700 border-green-200",
@@ -1003,10 +1200,12 @@ function ProductCard({ product }: { product: Product }) {
       <div className="min-h-screen bg-background"><Navbar />
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-4xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Minhas Reservas</h1><p className="text-muted-foreground mt-1">{userReservations.length} reserva(s)</p></div>
+            <div><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Minhas Reservas</h1><p className="text-muted-foreground mt-1">{reservationLoading ? "Carregando..." : reservationError ? "Reservas indisponíveis" : userReservations.length + " reserva(s)"}</p></div>
             <button onClick={() => setCurrentScreen("catalog")} className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium flex items-center gap-2 self-start"><Plus className="w-4 h-4" /> Nova Reserva</button>
           </div>
-          {userReservations.length === 0 ? (
+          {reservationLoading ? <p role="status" className="p-8 text-center">Carregando reservas...</p> : reservationError ? (
+            <div className="p-8 text-center"><p role="alert">{reservationError}</p><button onClick={() => setReservationRefresh(value => value + 1)} className="mt-4 px-5 py-3 rounded-xl bg-primary text-white">Tentar novamente</button></div>
+          ) : userReservations.length === 0 ? (
             <div className="bg-white rounded-2xl border border-border p-16 text-center">
               <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Nenhuma reserva</h3>
@@ -1020,7 +1219,7 @@ function ProductCard({ product }: { product: Product }) {
                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0"><img src={res.product.imagem} alt={res.product.nome} className="w-full h-full object-cover" /></div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <div><h3 className="font-semibold text-lg">{res.product.nome}</h3><p className="text-muted-foreground text-sm">{res.product.categoria}</p>
+                        <div><p className="text-sm text-muted-foreground">Reserva nº {res.id}</p><h3 className="font-semibold text-lg">{res.product.nome}</h3><p className="text-muted-foreground text-sm">{res.product.categoria}</p>
                           <div className="flex items-center gap-4 mt-2"><span className="text-xl font-bold text-primary">R$ {res.product.preco.toFixed(2)}</span><span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{res.date}</span></div>
                         </div>
                         <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border flex-shrink-0 self-start ${statusCls[res.status]||statusCls["Confirmada"]}`}>{res.status}</span>
@@ -1083,13 +1282,17 @@ function ProductCard({ product }: { product: Product }) {
       <div className="min-h-screen bg-background"><Navbar />
         <div className="pt-28 pb-20"><div className="container mx-auto px-4 lg:px-8 max-w-4xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Histórico de Compras</h1><p className="text-muted-foreground mt-1">{orders.length} pedido(s) realizados</p></div>
+            <div><h1 className="text-3xl font-bold" style={{fontFamily:"Poppins,sans-serif"}}>Histórico de Compras</h1><p className="text-muted-foreground mt-1">{historyLoading ? "Carregando..." : historyError ? "Histórico indisponível" : `${purchaseHistory.length} pedido(s) realizados`}</p></div>
             <button onClick={() => setCurrentScreen("catalog")} className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium flex items-center gap-2 self-start"><ShoppingBag className="w-4 h-4" /> Nova compra</button>
           </div>
-          {orders.length === 0 ? (
+          {historyLoading ? (
+            <p role="status" className="p-8 text-center">Carregando suas compras...</p>
+          ) : historyError ? (
+            <div className="p-8 text-center bg-white rounded-2xl border border-border"><p role="alert">{historyError}</p><button onClick={() => setHistoryRefresh(value => value + 1)} className="mt-4 px-5 py-3 rounded-xl bg-primary text-white">Tentar novamente</button></div>
+          ) : purchaseHistory.length === 0 ? (
             <div className="bg-white rounded-2xl border border-border p-16 text-center"><Receipt className="w-16 h-16 text-muted-foreground mx-auto mb-4" /><h3 className="text-xl font-semibold mb-2">Nenhuma compra</h3><button onClick={() => setCurrentScreen("catalog")} className="mt-4 px-6 py-3 bg-primary text-white rounded-xl font-medium">Explorar Produtos</button></div>
           ) : (
-            <div className="space-y-4">{orders.map(o=>(
+            <div className="space-y-4">{purchaseHistory.map(o=>(
               <div key={o.id} className="bg-white rounded-2xl border border-border p-6 hover:shadow-md cursor-pointer" onClick={() => setSelected(o)}>
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div><p className="font-semibold text-lg">Pedido #{o.id}</p><p className="text-sm text-muted-foreground flex items-center gap-1 mt-1"><Calendar className="w-3.5 h-3.5" />{o.date}</p></div>
@@ -1217,8 +1420,8 @@ function ProductCard({ product }: { product: Product }) {
                 </div>
               </div>
               <div className="bg-[#EAF2FF] rounded-xl p-5 border border-primary/15 text-sm text-muted-foreground leading-relaxed"><strong className="text-foreground">Atenção:</strong> O pagamento e a retirada ocorrem presencialmente na Casa Azul.</div>
-              <button onClick={handleConfirmOrder} className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 transition-all">
-                <CheckCircle2 className="w-5 h-5" /> Confirmar Compra
+              <button onClick={handleConfirmOrder} disabled={isSubmittingOrder} className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-wait">
+                <CheckCircle2 className="w-5 h-5" /> {isSubmittingOrder ? "Registrando compra..." : "Confirmar Compra"}
               </button>
             </div>
           </div>
@@ -1291,7 +1494,7 @@ function ProductCard({ product }: { product: Product }) {
                 </div>
               </div>
               <div className="bg-[#EAF2FF] rounded-xl p-5 border border-primary/15 text-sm text-muted-foreground"><strong className="text-foreground">Importante:</strong> Pagamento e retirada presencialmente na Casa Azul.</div>
-              <button onClick={handleConfirmReservation} className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 transition-all"><CheckCircle2 className="w-5 h-5" /> Confirmar Reserva</button>
+              <button onClick={handleConfirmReservation} disabled={reservationSaving} className="w-full py-4 bg-primary text-white rounded-xl hover:bg-primary/90 font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:-translate-y-0.5 transition-all"><CheckCircle2 className="w-5 h-5" /> {reservationSaving ? "Registrando reserva..." : "Confirmar Reserva"}</button>
             </div>
           </div>
         </div></div>
@@ -1310,7 +1513,7 @@ function ProductCard({ product }: { product: Product }) {
         <div className="max-w-lg w-full">
           <div className="bg-white rounded-2xl border border-border p-10 text-center shadow-sm">
             <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-12 h-12 text-green-600" /></div>
-            <h1 className="text-3xl font-bold mb-3" style={{fontFamily:"Poppins,sans-serif"}}>Reserva Confirmada!</h1>
+            <h1 className="text-3xl font-bold mb-3" style={{fontFamily:"Poppins,sans-serif"}}>Reserva registrada!</h1><p className="font-semibold mb-3">Número da reserva: {lastReservationId}</p>
             <p className="text-muted-foreground mb-6 leading-relaxed">Clique em "Continuar para WhatsApp" para combinar os detalhes com a equipe da Casa Azul.</p>
             {selectedProduct && (
               <div className="flex items-center gap-4 p-4 bg-muted rounded-xl mb-8 text-left">
@@ -1485,7 +1688,7 @@ function ProductCard({ product }: { product: Product }) {
               <div>
                 <div className="text-sm text-muted-foreground mb-2 uppercase tracking-wide font-medium">{selectedProduct.categoria}</div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>{selectedProduct.nome}</h1>
-                <div className="flex items-center gap-4"><span className="text-4xl font-bold text-primary">R$ {selectedProduct.preco.toFixed(2)}</span><StatusBadge status={selectedProduct.status} /></div>
+                <div className="flex items-center gap-4"><span className="text-4xl font-bold text-primary">R$ {selectedProduct.preco.toFixed(2)}</span><StatusBadge status={productAvailability(selectedProduct)} /></div>
               </div>
               <div className="border-t border-b border-border py-6 space-y-4">
                 <div><h3 className="font-semibold mb-2">Descrição</h3><p className="text-muted-foreground leading-relaxed">{selectedProduct.descricao}</p></div>
@@ -1497,14 +1700,14 @@ function ProductCard({ product }: { product: Product }) {
                   <div><h3 className="font-semibold text-lg mb-2">Compra Solidária</h3><p className="text-sm text-muted-foreground leading-relaxed">Sua compra ajuda a manter os projetos sociais da Casa Azul.</p></div>
                 </div>
               </div>
-              {selectedProduct.status === "disponivel" ? (
+              {productAvailability(selectedProduct) === "disponivel" ? (
                 <div className="space-y-3">
-                  <button onClick={() => { addToCart(selectedProduct); }} className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${inCart ? "bg-green-600 text-white" : "bg-primary text-white hover:bg-primary/90 shadow-lg hover:-translate-y-0.5"}`}>
-                    <ShoppingCart className="w-5 h-5" />{inCart ? "Adicionado ao Carrinho ✓" : "Adicionar ao Carrinho"}
+                  <button type="button" translate="no" onClick={() => { addToCart(selectedProduct); }} className={`w-full px-4 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${inCart ? "bg-green-600 text-white" : "bg-primary text-white hover:bg-primary/90 shadow-lg hover:-translate-y-0.5"}`}>
+                    <ShoppingCart aria-hidden="true" className="w-5 h-5 shrink-0" /><span>{inCart ? "Adicionado ao carrinho" : "Adicionar ao carrinho"}</span>
                   </button>
-                  {inCart && <button onClick={() => setCurrentScreen("cart")} className="w-full py-3 bg-accent text-primary border border-primary/20 rounded-xl hover:bg-primary/10 font-medium flex items-center justify-center gap-2"><ChevronRight className="w-5 h-5" /> Ver Carrinho</button>}
-                  <button onClick={handleReserveClick} className="w-full py-3 bg-white text-primary border-2 border-primary rounded-xl hover:bg-primary hover:text-white font-medium flex items-center justify-center gap-2 transition-all">
-                    {isLoggedIn ? <><CheckCircle2 className="w-5 h-5" /> Reservar este Produto</> : <><LogIn className="w-5 h-5" /> Entrar para Reservar</>}
+                  {inCart && <button type="button" translate="no" onClick={() => setCurrentScreen("cart")} className="w-full py-3 bg-accent text-primary border border-primary/20 rounded-xl hover:bg-primary/10 font-medium flex items-center justify-center gap-2"><ChevronRight aria-hidden="true" className="w-5 h-5 shrink-0" /><span>Ver carrinho</span></button>}
+                  <button type="button" translate="no" onClick={handleReserveClick} className="w-full py-3 bg-white text-primary border-2 border-primary rounded-xl hover:bg-primary hover:text-white font-medium flex items-center justify-center gap-2 transition-all">
+                    {isLoggedIn ? <><CheckCircle2 aria-hidden="true" className="w-5 h-5 shrink-0" /><span>Reservar este produto</span></> : <><LogIn aria-hidden="true" className="w-5 h-5 shrink-0" /><span>Entrar para reservar</span></>}
                   </button>
                 </div>
               ) : (
@@ -1581,6 +1784,26 @@ function ProductCard({ product }: { product: Product }) {
   // ─── Admin Screen ──────────────────────────────────────────────────────────
 
   const AdminScreen = () => {
+    const [selectedSale, setSelectedSale] = useState<Order | null>(null);
+    const saleDialogRef = useRef<HTMLDialogElement>(null);
+    useEffect(() => {
+      if (selectedSale && saleDialogRef.current && !saleDialogRef.current.open) {
+        saleDialogRef.current.showModal();
+      }
+    }, [selectedSale]);
+    const saleWhatsAppUrl = (sale: Order) => {
+      const message = [
+        `Bazar Solidário Casa Azul — Venda nº ${sale.id}`,
+        `Cliente: ${sale.cliente || "Cliente"}`,
+        `Data: ${sale.date}`,
+        `Status: ${sale.status}`,
+        "Produtos:",
+        ...sale.items.map(item => `${item.quantity} × ${item.product.nome} — R$ ${(item.quantity * item.product.preco).toFixed(2)}`),
+        `Total: R$ ${sale.total.toFixed(2)}`,
+        `Forma de pagamento: ${sale.formaPagamento || "Não informada"}`
+      ].join("\n");
+      return `https://wa.me/?text=${encodeURIComponent(message)}`;
+    };
     const [localAdminUsers, setLocalAdminUsers] = useState(adminUsers);
     const [localOrders, setLocalOrders] = useState(orders);
     const [showModal, setShowModal] = useState(false);
@@ -1764,7 +1987,7 @@ useEffect(() => {
         id: u.id,
         name: u.nome,
         email: u.email,
-        phone: "-",
+        phone: u.telefone || "-",
         registeredAt: u.criado_em
           ? new Date(u.criado_em).toLocaleDateString("pt-BR")
           : "-",
@@ -1881,9 +2104,7 @@ const salvarWhatsApp = async () => {
     descricao: pForm.descricao,
     categoria: pForm.categoria,
     preco,
-    quantidade: editingProduct
-      ? (editingProduct as any).quantidade || 1
-      : 1,
+    ...(editingProduct ? {} : { quantidade: 1 }),
     status: pForm.status,
     condicao: pForm.condicao,
     imagem: pForm.imagem
@@ -2015,10 +2236,24 @@ const deleteProd = async (id: number) => {
   }
 };
 
-    const salesData = [
-      {mes:"Out",vendas:8,valor:240},{mes:"Nov",vendas:12,valor:380},{mes:"Dez",vendas:19,valor:590},
-      {mes:"Jan",vendas:15,valor:450},{mes:"Fev",vendas:22,valor:680},{mes:"Mar",vendas:18,valor:540},
-    ];
+    const salesData = (() => {
+      const nomesMeses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      const hoje = new Date();
+      const baldes = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        baldes.push({ mes: nomesMeses[d.getMonth()], vendas: 0, valor: 0, ano: d.getFullYear(), mesIndex: d.getMonth() });
+      }
+      localOrders.forEach(o => {
+        const partes = o.date.split("/");
+        if (partes.length !== 3) return;
+        const mesIndex = Number(partes[1]) - 1;
+        const ano = Number(partes[2]);
+        const balde = baldes.find(b => b.ano === ano && b.mesIndex === mesIndex);
+        if (balde) { balde.vendas += 1; balde.valor += o.total; }
+      });
+      return baldes.map(({ mes, vendas, valor }) => ({ mes, vendas, valor }));
+    })();
     const pieData = [
       {name:"Disponível",value:allProducts.filter(p=>p.status==="disponivel").length,color:"#22c55e"},
       {name:"Reservado",value:allProducts.filter(p=>p.status==="reservado").length,color:"#eab308"},
@@ -2437,23 +2672,72 @@ const tabs: {
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted border-b border-border"><tr>{["#","Cliente","Produtos","Qtd","Valor","Data","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
+                    <thead className="bg-muted border-b border-border"><tr>{["Número de venda","Cliente","Produtos","Qtd","Valor","Data","Status","Ações"].map(h=><th key={h} className="text-left p-4 font-semibold text-sm text-muted-foreground whitespace-nowrap">{h}</th>)}</tr></thead>
                     <tbody>{localOrders.map(o=>(
                       <tr key={o.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="p-4 text-muted-foreground text-sm">#{o.id}</td>
+                        <td className="p-4 text-muted-foreground text-sm">#{o.id}{o.origem === "reserva" && <span className="block text-xs text-primary">Reserva</span>}</td>
                         <td className="p-4 font-medium whitespace-nowrap">{o.cliente || "Cliente"}</td>
                         <td className="p-4 text-sm max-w-[160px] truncate">{o.items.map(i=>i.product.nome).join(", ")}</td>
                         <td className="p-4 text-sm text-center">{o.items.reduce((s,i)=>s+i.quantity,0)}</td>
                         <td className="p-4 font-semibold text-primary">R$ {o.total.toFixed(2)}</td>
                         <td className="p-4 text-muted-foreground text-sm whitespace-nowrap">{o.date}</td>
                         <td className="p-4">
-                          <select value={o.status} onChange={e => setLocalOrders(p=>p.map(x=>x.id===o.id?{...x,status:e.target.value as OrderStatus}:x))} className="text-xs px-2 py-1.5 rounded-lg border border-border bg-muted focus:outline-none focus:ring-2 focus:ring-primary/20">
+                       <select
+  value={o.status}
+  onChange={async (e) => {
+    const novoStatus = e.target.value as OrderStatus;
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Sessão não encontrada.");
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        `${API_URL}/api/vendas/${o.id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            status: novoStatus
+          })
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        toast.error(dados.erro || "Erro ao atualizar status.");
+        return;
+      }
+
+      setLocalOrders(prev =>
+        prev.map(venda =>
+          venda.id === o.id
+            ? { ...venda, status: dados.venda.status }
+            : venda
+        )
+      );
+
+      setOrders(prev => prev.map(venda => venda.id === o.id ? { ...venda, status: dados.venda.status } : venda));
+      void refreshProducts();
+      toast.success("Status atualizado com sucesso!");
+
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Não foi possível atualizar o status.");
+    }
+  }} className="text-xs px-2 py-1.5 rounded-lg border border-border bg-muted focus:outline-none focus:ring-2 focus:ring-primary/20">
                             {(["Pendente","Reservada","Confirmada","Finalizada","Cancelada"] as OrderStatus[]).map(s=><option key={s}>{s}</option>)}
                           </select>
                         </td>
-                        <td className="p-4"><div className="flex gap-1"><button className="p-2 hover:bg-accent rounded-lg">
+                        <td className="p-4"><div className="flex gap-1"><button type="button" onClick={() => setSelectedSale(o)} title="Ver detalhes da venda" aria-label={`Ver detalhes da venda ${o.id}`} className="p-2 hover:bg-accent rounded-lg">
   <Eye className="w-4 h-4 text-primary" />
-</button><button className="p-2 hover:bg-green-50 rounded-lg"><MessageCircle className="w-4 h-4 text-green-600" /></button></div></td>
+</button><a href={saleWhatsAppUrl(o)} target="_blank" rel="noopener noreferrer" title="Compartilhar venda no WhatsApp" aria-label={`Compartilhar venda ${o.id} no WhatsApp`} className="p-2 hover:bg-green-50 rounded-lg"><MessageCircle className="w-4 h-4 text-green-600" /></a></div></td>
                       </tr>
                     ))}</tbody>
                   </table>
@@ -2515,7 +2799,7 @@ const tabs: {
                   {l:"Total de Usuários",v:localAdminUsers.length,c:"text-primary"},
                   {l:"Total de Produtos",v:allProducts.length,c:"text-secondary"},
                   {l:"Produtos Reservados",v:allProducts.filter(p=>p.status==="reservado").length,c:"text-yellow-600"},
-                  {l:"Total de Vendas",v:`R$ ${(orders.reduce((s,o)=>s+o.total,0)+2340).toFixed(2)}`,c:"text-green-600"},
+                  {l:"Total de Vendas",v:`R$ ${localOrders.reduce((s,o)=>s+o.total,0).toFixed(2)}`,c:"text-green-600"},
                 ].map((c,i)=>(
                   <div key={i} className="bg-white rounded-2xl border border-border p-6 text-center">
                     <div className={`text-3xl font-bold ${c.c} mb-2`} style={{fontFamily:"Poppins,sans-serif"}}>{c.v}</div>
@@ -2585,6 +2869,29 @@ const tabs: {
         </div>
 
         {/* Product Modal */}
+        {selectedSale && (
+          <dialog ref={saleDialogRef} onCancel={() => setSelectedSale(null)} onClose={() => setSelectedSale(null)} onClick={event => { if (event.target === event.currentTarget) setSelectedSale(null); }} aria-labelledby="sale-details-title" className="m-auto w-[calc(100%-2rem)] max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-white p-0 shadow-xl backdrop:bg-black/50">
+            <div className="p-6 border-b border-border flex items-center justify-between gap-4">
+              <h2 id="sale-details-title" className="text-xl font-bold">Número de venda: {selectedSale.id}</h2>
+              <button type="button" autoFocus onClick={() => setSelectedSale(null)} aria-label="Fechar detalhes" className="p-2 rounded-lg hover:bg-muted"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-5">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div><dt className="text-muted-foreground">Cliente</dt><dd className="font-medium">{selectedSale.cliente || "Cliente"}</dd></div>
+                <div><dt className="text-muted-foreground">Data</dt><dd>{selectedSale.date}</dd></div>
+                <div><dt className="text-muted-foreground">Status</dt><dd>{selectedSale.status}</dd></div>
+                <div><dt className="text-muted-foreground">Forma de pagamento</dt><dd>{selectedSale.formaPagamento || "Não informada"}</dd></div>
+              </dl>
+              <div className="overflow-x-auto"><table className="w-full text-sm text-left">
+                <thead><tr className="border-b"><th className="py-3 pr-3">Produto</th><th className="p-3">Quantidade</th><th className="p-3 whitespace-nowrap">Valor unitário</th><th className="py-3 pl-3">Subtotal</th></tr></thead>
+                <tbody>{selectedSale.items.map((item, index) => <tr key={`${item.product.id}-${index}`} className="border-b"><td className="py-3 pr-3">{item.product.nome}</td><td className="p-3">{item.quantity}</td><td className="p-3 whitespace-nowrap">R$ {item.product.preco.toFixed(2)}</td><td className="py-3 pl-3 whitespace-nowrap">R$ {(item.product.preco * item.quantity).toFixed(2)}</td></tr>)}</tbody>
+              </table></div>
+              <p className="text-right text-lg font-bold">Total: R$ {selectedSale.total.toFixed(2)}</p>
+              <a href={saleWhatsAppUrl(selectedSale)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white px-4 py-3 font-medium"><MessageCircle className="w-5 h-5" /> Compartilhar no WhatsApp</a>
+              <p className="text-sm text-muted-foreground">Escolha o destinatário no WhatsApp e confira a mensagem antes de enviar.</p>
+            </div>
+          </dialog>
+        )}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target===e.currentTarget) setShowModal(false); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
