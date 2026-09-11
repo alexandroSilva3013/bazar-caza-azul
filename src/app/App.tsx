@@ -4,7 +4,7 @@ import { ProductPhotoPicker } from "./components/ProductPhotoPicker";
 import {
   Heart, ShoppingBag, Users, Book, Shirt, Baby,
   Footprints, Gamepad2, Watch, Search, Filter, Phone,
-  Mail, MapPin, Facebook, Instagram, MessageCircle,
+  Mail, MapPin, Facebook, Instagram, MessageCircle, Linkedin, Youtube,
   ChevronRight, Check, Award, Clock, Package,
   TrendingUp, BarChart3, Edit, Trash2, Plus, X, Menu,
   Home as HomeIcon, Info, ArrowRight,
@@ -678,6 +678,9 @@ const handleAdminLogout = () => {
             {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
               <button key={s} translate="no" onClick={() => setCurrentScreen(s as Screen)} className="text-white hover:text-white/80 transition-colors font-medium">{l}</button>
             ))}
+            <div className="flex items-center gap-1 border-l border-white/30 pl-3" aria-label="Redes sociais">
+              {[[Instagram,"Instagram","https://www.instagram.com/casa.azul.felipe.augusto"],[Facebook,"Facebook","https://www.facebook.com/osc.casa.azul.felipe.augusto"],[MessageCircle,"WhatsApp","https://api.whatsapp.com/send?phone=5561991686481"],[Linkedin,"LinkedIn","https://br.linkedin.com/in/casa-azul-felipeaugusto-oficial-400ab0238"],[Youtube,"YouTube","https://www.youtube.com/channel/UCXB0UFvOxlLAfYUvBhLlEsg"]].map(([Icon,label,href]) => <a key={label as string} href={href as string} target="_blank" rel="noopener noreferrer" aria-label={label as string} className="p-1.5 text-white hover:text-[#FFC438] transition-colors"><Icon className="w-4 h-4" /></a>)}
+            </div>
             <button onClick={() => setCurrentScreen("cart")} className="relative p-2 text-white hover:bg-white/15 rounded-xl transition-colors">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
@@ -1583,14 +1586,21 @@ function ProductCard({ product }: { product: Product }) {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
+      <section aria-label="Impacto social da Casa Azul" className="py-12 lg:py-16 bg-[#3F6CBF] text-white">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[{I:Users,v:"1989",l:"Início da trajetória",c:"text-primary",b:"bg-primary/10"},{I:Heart,v:"DF",l:"Atuação institucional",c:"text-secondary",b:"bg-secondary/10"},{I:Package,v:String(allProducts.filter(p => productAvailability(p) === "disponivel").length),l:"Produtos disponíveis no bazar",c:"text-primary",b:"bg-primary/10"},{I:Award,v:"Solidariedade",l:"Faça parte desta história",c:"text-secondary",b:"bg-secondary/10"}].map((s,i)=>(
-              <div key={i} className="text-center">
-                <div className={`w-16 h-16 ${s.b} rounded-2xl flex items-center justify-center mx-auto mb-4`}><s.I className={`w-8 h-8 ${s.c}`} /></div>
-                <div className={`text-2xl md:text-3xl font-bold ${s.c}`} style={{fontFamily:"Poppins,sans-serif"}}>{s.v}</div>
-                <div className="text-muted-foreground font-medium mt-2">{s.l}</div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-y-10 gap-x-4">
+            {[
+              {I:Heart,v:"558",l:"Voluntários"},
+              {I:User,v:"2.793",l:"Jovens e adolescentes aprendizes no mercado de trabalho"},
+              {I:Award,v:"100",l:"Parceiros"},
+              {I:TrendingUp,v:"10.363",l:"Capacitados para o mercado de trabalho"},
+              {I:Heart,v:"6.696",l:"Mulheres capacitadas e empoderadas"},
+              {I:Users,v:"18.183",l:"Crianças e adolescentes atendidos"},
+            ].map(s => (
+              <div key={s.l} className="text-center min-w-0 px-2 lg:border-r lg:border-dashed lg:border-white/40 lg:last:border-r-0">
+                <s.I aria-hidden="true" className="w-12 h-12 mx-auto mb-4 text-[#FFC438]" strokeWidth={1.75} />
+                <div className="text-3xl xl:text-4xl font-bold text-white" style={{fontFamily:"Poppins,sans-serif"}}>{s.v}</div>
+                <p className="text-sm leading-snug mt-2 max-w-[190px] mx-auto text-white">{s.l}</p>
               </div>
             ))}
           </div>
