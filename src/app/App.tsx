@@ -1600,7 +1600,7 @@ function ProductCard({ product }: { product: Product }) {
         </div>
       </section>
 
-      <section ref={howItWorksRef} className="py-20 bg-[#F8F3EB]">
+      <section ref={howItWorksRef} className="py-20 institutional-scroll institutional-scroll-hands">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Como Funciona</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Processo simples para comprar produtos solidários</p></div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -1629,7 +1629,7 @@ function ProductCard({ product }: { product: Product }) {
         </div>
       </section>
 
-      <section className="py-20 bg-[#EAF2FF]">
+      <section className="py-20 institutional-scroll institutional-scroll-heart">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:"Poppins,sans-serif"}}>Produtos em Destaque</h2></div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">{allProducts.slice(0,4).map(p=><ProductCard key={p.id} product={p} />)}</div>

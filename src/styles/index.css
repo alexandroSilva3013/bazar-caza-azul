@@ -1,3 +1,30 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* Ilustrações usadas no site institucional, acompanhando a rolagem. */
+.institutional-scroll {
+  background-color: #3F6CBF;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: auto 200px;
+  background-position: 5vw 30vh;
+}
+.institutional-scroll-hands {
+  background-color: #1A3972;
+  background-image: url('/brand/hand-2.svg');
+  background-position: 90vw 25vh;
+}
+.institutional-scroll-heart {
+  background-image: url('/brand/think-heart.svg');
+}
+.institutional-scroll > .container > .text-center > h2,
+.institutional-scroll > .container > .text-center > p {
+  color: white;
+}
+@media (max-width: 640px) {
+  .institutional-scroll { background-size: 110px auto; background-position: 95% 25vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .institutional-scroll { background-attachment: scroll; }
+}
