@@ -2357,7 +2357,7 @@ const catData = CATEGORIES.map(cat=>({
         "BAZAR SOLIDARIO CASA AZUL",
         "Relatorio gerado em " + new Date().toLocaleDateString("pt-BR"),
         "",
-        `RESUMO: ${allProducts.length} produtos | ${localOrders.length} vendas | ${localAdminUsers.length} usuarios`,
+        `RESUMO DA DASHBOARD: ${allProducts.length} produtos | ${localOrders.length} vendas/reservas`,
         `Produtos disponiveis: ${allProducts.filter(p => productAvailability(p) === "disponivel").length}`,
         `Produtos reservados: ${allProducts.filter(p => productAvailability(p) === "reservado").length}`,
         `Produtos indisponiveis: ${allProducts.filter(p => productAvailability(p) === "indisponivel").length}`,
@@ -2367,9 +2367,6 @@ const catData = CATEGORIES.map(cat=>({
         "",
         "VENDAS E RESERVAS",
         ...localOrders.slice(0, 30).map(v => `- #${v.id} | ${v.cliente || "Cliente"} | ${v.status} | R$ ${v.total.toFixed(2)} | ${v.date}`),
-        "",
-        "USUARIOS CADASTRADOS",
-        ...localAdminUsers.slice(0, 30).map(u => `- ${u.name} | ${u.email} | ${u.status}`),
       ].map(semAcentos);
       const linhas = linhasBase.flatMap(linha => {
         if (!linha) return [""];
