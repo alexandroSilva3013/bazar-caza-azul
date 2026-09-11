@@ -670,11 +670,8 @@ const handleAdminLogout = () => {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <button onClick={() => { setCurrentScreen("home"); setMobileMenuOpen(false); setUserMenuOpen(false); }} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center"><Heart className="w-6 h-6 text-white fill-white" /></div>
-            <div className="hidden sm:block">
-              <div className="font-bold text-lg text-primary" style={{fontFamily:"Poppins,sans-serif"}}>Casa Azul</div>
-              <div className="text-xs text-muted-foreground -mt-1">Bazar Solidário</div>
-            </div>
+            <img src="/brand/casa-azul-oficial.png" alt="Casa Azul Felipe Augusto — início" className="h-16 w-auto object-contain shrink-0" />
+            <span className="hidden sm:block text-sm font-medium text-primary">Bazar Solidário</span>
           </button>
 
           <div className="hidden lg:flex items-center gap-6">
