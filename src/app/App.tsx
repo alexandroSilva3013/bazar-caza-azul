@@ -678,8 +678,8 @@ const handleAdminLogout = () => {
           </button>
 
           <div className="hidden lg:flex items-center gap-6">
-            {[["home","Início"],["catalog","Catálogo"],["about","Sobre"],["contact","Contato"]].map(([s,l]) => (
-              <button key={s} onClick={() => setCurrentScreen(s as Screen)} className="text-foreground hover:text-primary transition-colors font-medium">{l}</button>
+            {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
+              <button key={s} translate="no" onClick={() => setCurrentScreen(s as Screen)} className="text-foreground hover:text-primary transition-colors font-medium">{l}</button>
             ))}
             <button onClick={() => setCurrentScreen("cart")} className="relative p-2 hover:bg-accent rounded-xl transition-colors">
               <ShoppingCart className="w-5 h-5" />
@@ -734,8 +734,8 @@ const handleAdminLogout = () => {
 
         {mobileMenuOpen && (
           <div className="lg:hidden py-4 space-y-1 border-t border-border">
-            {[["home","Início"],["catalog","Catálogo"],["about","Sobre"],["contact","Contato"]].map(([s,l]) => (
-              <button key={s} onClick={() => { setCurrentScreen(s as Screen); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg font-medium">{l}</button>
+            {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
+              <button key={s} translate="no" onClick={() => { setCurrentScreen(s as Screen); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg font-medium">{l}</button>
             ))}
             <div className="border-t border-border pt-3 mt-3 space-y-1">
               {!isLoggedIn ? (
@@ -747,7 +747,7 @@ const handleAdminLogout = () => {
                 <>
                   <div className="px-4 py-3 bg-accent rounded-xl mb-2"><p className="font-semibold text-primary">{currentUser?.name}</p><p className="text-xs text-muted-foreground">{currentUser?.email}</p></div>
                   {[["profile","Meu Perfil"],["my-reservations","Minhas Reservas"],["purchase-history","Histórico de Compras"]].map(([s,l]) => (
-                    <button key={s} onClick={() => { setCurrentScreen(s as Screen); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg font-medium">{l}</button>
+                    <button key={s} translate="no" onClick={() => { setCurrentScreen(s as Screen); setMobileMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 hover:bg-muted rounded-lg font-medium">{l}</button>
                   ))}
                   <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 hover:bg-red-50 rounded-lg text-red-500 font-medium flex items-center gap-2"><LogOut className="w-4 h-4" /> Sair</button>
                 </>
@@ -786,8 +786,8 @@ const handleAdminLogout = () => {
           <div>
             <h4 className="font-semibold mb-4 text-lg">Links Rápidos</h4>
             <div className="space-y-2">
-              {[["home","Início"],["catalog","Catálogo"],["about","Sobre"],["contact","Contato"]].map(([s,l]) => (
-                <button key={s} onClick={() => setCurrentScreen(s as Screen)} className="block text-sm opacity-90 hover:opacity-100 hover:underline transition-all">{l}</button>
+              {[["about","Sobre nós"],["catalog","Catálogo"],["contact","Contato"]].map(([s,l]) => (
+                <button key={s} translate="no" onClick={() => setCurrentScreen(s as Screen)} className="block text-sm opacity-90 hover:opacity-100 hover:underline transition-all">{l}</button>
               ))}
             </div>
           </div>
