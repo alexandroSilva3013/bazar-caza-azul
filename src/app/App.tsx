@@ -2351,7 +2351,7 @@ const tabs: {
   {id:"reservations", label:"Reservas / Vendas", I:ShoppingBag},
 ];
     return (
-      <div className="flex min-h-screen bg-muted">
+      <div className="flex flex-col lg:flex-row min-h-screen bg-muted">
         {/* Sidebar */}
         <div className="bg-white border-b lg:border-r border-border w-full lg:w-64 lg:min-h-screen lg:sticky lg:top-0 flex flex-col flex-shrink-0">
           <div className="p-4 lg:p-6 border-b border-border">
