@@ -6,6 +6,33 @@ const autenticarToken = require("./auth");
 const somenteAdmin = require("./admin");
 
 const router = express.Router();
+// A senha temporária é mostrada somente na resposta ao administrador.
+router.post('/:id/redefinir-senha', autenticarToken, somenteAdmin, async (req, res) => {
+  if (Number(req.params.id) === Number(req.usuario.id)) return res.status(400).json({erro:'Use a troca de senha da própria conta.'});
+  try {
+    const senha = require('node:crypto').randomBytes(12).toString('base64url');
+    const hash = await bcrypt.hash(senha, 10);
+    const result = await pool.query('UPDATE usuarios SET senha=$1, trocar_senha=TRUE, versao_sessao=versao_sessao+1 WHERE id=$2 RETURNING id', [hash, req.params.id]);
+    if (!result.rowCount) return res.status(404).json({erro:'Usuário não encontrado.'});
+    res.setHeader('Cache-Control','no-store');
+    res.json({senha_temporaria:senha, mensagem:'Senha temporária gerada. O usuário deve trocá-la no próximo acesso.'});
+  } catch { res.status(500).json({erro:'Não foi possível redefinir a senha.'}); }
+});
+
+router.put('/minha-senha', autenticarToken, async (req, res) => {
+  const {senha_atual, nova_senha} = req.body;
+  if (typeof senha_atual !== 'string' || Buffer.byteLength(senha_atual,'utf8') > 72 || typeof nova_senha !== 'string' || nova_senha.length < 8 || Buffer.byteLength(nova_senha,'utf8') > 72) return res.status(400).json({erro:'Informe a senha atual e uma nova senha de pelo menos 8 caracteres (até 72 bytes).'});
+  if (senha_atual === nova_senha) return res.status(400).json({erro:'Escolha uma senha diferente da temporária.'});
+  try {
+    const {rows} = await pool.query('SELECT senha FROM usuarios WHERE id=$1',[req.usuario.id]);
+    if (!rows[0] || !await bcrypt.compare(senha_atual,rows[0].senha)) return res.status(400).json({erro:'Senha atual incorreta.'});
+    const hash = await bcrypt.hash(nova_senha,10);
+    const result = await pool.query('UPDATE usuarios SET senha=$1, trocar_senha=FALSE, versao_sessao=versao_sessao+1 WHERE id=$2 AND versao_sessao=$3',[hash,req.usuario.id,req.usuario.versao_sessao]);
+    if (!result.rowCount) return res.status(409).json({erro:'A conta foi alterada. Entre novamente.'});
+    res.json({mensagem:'Senha alterada. Entre novamente com a nova senha.'});
+  } catch { res.status(500).json({erro:'Não foi possível alterar a senha.'}); }
+});
+
 router.param("id", (req, res, next, id) => {
   if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) return res.status(400).json({ erro: "Usuário inválido." });
   next();
@@ -205,7 +232,8 @@ router.post("/login", async (req, res) => {
       {
         id: usuario.id,
         email: usuario.email,
-        tipo: usuario.tipo
+        tipo: usuario.tipo,
+        versao_sessao: usuario.versao_sessao
       },
       process.env.JWT_SECRET,
       {
@@ -220,7 +248,8 @@ router.post("/login", async (req, res) => {
         nome: usuario.nome,
         telefone: usuario.telefone,
         email: usuario.email,
-        tipo: usuario.tipo
+        tipo: usuario.tipo,
+        trocar_senha: usuario.trocar_senha
       },
       token
     });
@@ -238,7 +267,7 @@ router.post("/login", async (req, res) => {
 router.get("/perfil", autenticarToken, async (req, res) => {
   try {
     const resultado = await pool.query(
-      `SELECT id, nome, email, telefone, tipo, criado_em
+      `SELECT id, nome, email, telefone, tipo, criado_em, trocar_senha
        FROM usuarios
        WHERE id = $1`,
       [req.usuario.id]

@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(150) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     telefone VARCHAR(30),
+    trocar_senha BOOLEAN NOT NULL DEFAULT FALSE,
+    versao_sessao INTEGER NOT NULL DEFAULT 0,
     tipo VARCHAR(30) DEFAULT 'usuario',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

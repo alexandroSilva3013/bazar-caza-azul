@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ProductImage } from "./components/ProductImage";
 import { ProductPhotoPicker } from "./components/ProductPhotoPicker";
+import { AdminPasswordReset, RequiredPasswordChange } from "./components/PasswordReset";
 import {
   Heart, ShoppingBag, Users, Book, Shirt, Baby,
   Footprints, Gamepad2, Watch, Search, Filter, Phone,
@@ -178,6 +179,7 @@ const initAdminUsers: AdminUser[] = [
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [passwordRequired, setPasswordRequired] = useState(false);
   const [currentScreen, setScreen] = useState<Screen>(() => window.history.state?.bazarScreen || (localStorage.getItem("bazar.lastScreen") === "admin" ? "admin" : "home"));
   const setCurrentScreen = (screen: Screen) => {
     setScreen(screen);
@@ -258,6 +260,7 @@ useEffect(() => {
         }
         if (!active) return;
         const user = data.usuario;
+        if (user.trocar_senha) { setPasswordRequired(true); return; }
         if (["admin", "vendedor"].includes(user.tipo)) {
           setCurrentUser(null); setIsLoggedIn(false); setAdminRole(user.tipo); setIsAdminLoggedIn(true);
           setAdminTab((localStorage.getItem("bazar.adminTab") as AdminTabType) || "products");
@@ -495,6 +498,7 @@ const handleLogin = async (email: string, password: string) => {
     }
 
     localStorage.setItem("token", dados.token);
+    if (dados.usuario.trocar_senha) { setPasswordRequired(true); return; }
 
     setPurchaseHistory([]); setUserReservations([]); setReservationLoading(true);
     setHistoryLoading(true);
@@ -554,6 +558,7 @@ const handleAdminLogin = async (email: string, password: string) => {
 }
 
 localStorage.setItem("token", dados.token);
+if (dados.usuario.trocar_senha) { setPasswordRequired(true); return true; }
 localStorage.setItem("adminRole", dados.usuario.tipo);
 
 setCurrentUser(null);
@@ -2630,6 +2635,7 @@ const tabs: {
       </div>
 
       <div className="space-y-4">
+        <AdminPasswordReset key={editUser.id} id={editUser.id} />
         <div>
           <label className="block text-sm font-medium mb-2">Nome</label>
           <input
@@ -3581,7 +3587,7 @@ const tabs: {
   return (
     <div className="min-h-screen" onClick={() => { if (userMenuOpen) setUserMenuOpen(false); }}>
       <Toaster position="bottom-right" richColors />
-      {renderScreen()}
+      {passwordRequired ? <RequiredPasswordChange onExit={() => { localStorage.removeItem('token'); localStorage.removeItem('adminRole'); setPasswordRequired(false); setIsLoggedIn(false); setCurrentUser(null); setIsAdminLoggedIn(false); setAdminRole(null); setCurrentScreen('login'); }} /> : renderScreen()}
     </div>
   );
 }

@@ -1,5 +1,17 @@
 # Checkpoint — Bazar Solidário Casa Azul
 
+## Atualização — 15/09/2026
+
+- SMS adiado por decisão do usuário até a reunião com a Casa Azul.
+- Implementada alternativa: Área Administrativa → Usuários → Editar → Redefinir senha. Confirmação explícita no painel, geração aleatória de senha temporária e exibição apenas na resposta, sem guardar o texto em histórico local.
+- Senha temporária precisa ser entregue diretamente ao titular pela equipe. O site não envia SMS/e-mail.
+- Troca obrigatória no próximo login (cliente, vendedor ou administrador); backend bloqueia operações autenticadas até concluir a troca. Senhas e sessões anteriores são invalidadas. Após trocar, entrar novamente.
+- Administrador não redefine a própria senha por esse botão.
+- Migração `backend/migrations/20260915_senha_temporaria.sql` aplicada no banco local sem alterar senhas existentes.
+- Testes de integração aprovados para restrição ao administrador, rejeição da senha antiga, invalidação dos tokens, troca obrigatória e acesso com a nova senha.
+- Nenhuma senha de conta real foi redefinida na validação: testes usam esquema isolado.
+- As demais pendências abaixo continuam abertas. Recuperação por SMS/e-mail permanece adiada; não bloquear os demais trabalhos por esse item.
+
 Salvo em 11/09/2026 a pedido do responsável. Trabalho pausado para retomada posterior.
 
 ## Onde estamos
